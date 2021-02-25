@@ -1,0 +1,19 @@
+
+CNN questions
+1. what does feed-forward mean?
+2. what is the difference between keras and tensorflow? keras is the frontend?
+3. can you feed in layers to a keras model through a numpy array of layer objects and a loop?
+
+
+--- 
+let model run longer
+
+# 
+- look at predictions at training set vs test set
+- if you have reasonable predictions for training set but bad values for test, then you probably overfitted
+- if your test data is very different from your training data
+
+next exercise:
+gaussian noise
+some photons in x, y gaussian
+numpy.random.normal(shape=(128,128),)

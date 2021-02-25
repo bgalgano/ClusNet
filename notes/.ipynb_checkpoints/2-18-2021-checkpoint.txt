@@ -1,0 +1,50 @@
+one-on-one - [2/18/2021]
+
+done this week:
+- created cluster object code
+- imaging plotting and randomizing cluster locations
+    - grabbed R pixel size and plot
+    - updated shift constraints to prevent cluster wrapping around image borders
+- discussion with Nadia and Rosie on state of research rotation
+- considered ways of improvement for research progress (Below)
+
+talking points:
+    - apologize for lack of progress
+    - miscommunication in satisfication in research progress:
+        - specific tasks where met each week, but more ambiguous tasks
+            - sign of me being unfamiliar in the field and not sure what to tackle first
+        - thought it was mostly satisficatory since specific smaller tasks where met each week and discussion was had
+    - honestly, though research progress was slow as well and wanted to go faster,
+        - followed old pace because it didn't occur to ask for more work
+    - fill out research advisor form
+        
+suggestions for improvement:
+    - more specific task suggestions assigned
+        - should work collaboratively to determine tasks
+
+    - have performance review at mid and end of semester or season
+    
+    - meet more frequently but less time, more informal
+    
+        - utilize Tuesday office hours
+            - currently would be best used for understanding CNNs
+        - continue Thursday one-on-one times
+        
+    - clearer discussion on one-to-one meeting discussions
+        - open the floor for ideas
+        
+    - me having confidence in the state of my advisor's perspective = less anxiety towards work = less procastination, openness to ask more questions, more frequent communication
+    
+    - follow Nadia and Rosie's suggestions 
+        - commit to 'deep dive' with ML clusters
+        - don't start new exoplanet rotation until summer
+            - perhaps literature review with potential advisors and talks on the side
+            
+    - exploring ideas and tools for task managers
+    
+    - specifically schedule time blocks or hour quotas for work every week
+            
+To do:
+    - write CNN from ground up??
+    - continue 3brown1blue
+    - ask for and review wavelet decomposition paper
