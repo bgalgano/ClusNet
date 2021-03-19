@@ -1,0 +1,14 @@
+Notes from meeting:
+
+saving models
+    use YAML to save all hyper parameters
+    
+dig around in literature for astronomy papers and non-astro that used CNNs archectures
+    - Alex net
+    - Imagenet 18
+    
+Look for themes among those papers
+
+
+segmentation 
+    - segmention

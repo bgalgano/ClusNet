@@ -9,11 +9,17 @@ CNN questions
 let model run longer
 
 # 
-- look at predictions at training set vs test set
-- if you have reasonable predictions for training set but bad values for test, then you probably overfitted
-- if your test data is very different from your training data
 
-next exercise:
-gaussian noise
-some photons in x, y gaussian
-numpy.random.normal(shape=(128,128),)
+how to make gaussian profile:
+x = np.random.normal(mu=64,sigma=1,size=1000) # size= total or integrated number of photons
+y = np.random.normal(mu=64,sigma=1,size=1000) 
+
+# most photons in single pixel if sigma is 1 (pixel width)
+bins = np.arange(0,129,1)
+
+image = np.hist2d(x,y,bins=[bin,bin])
+-----------
+
+    
+    
+ 

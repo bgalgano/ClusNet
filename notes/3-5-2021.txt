@@ -1,0 +1,44 @@
+Notes from meeting:
+
+model training considerations
+    - loss function => biggest difference in the output (typically), mean absolute error vs mean sq error
+    - step size => most start out big then go small, fiddle with this to train faster?
+    - optimizer => start with adam (fast training), "SGD" stochastic gradient descent (trains longer, but results better?)
+    - labels => driven by science question
+    
+random forest regression does well with junky data
+    - for each input label, add an order of magnitude to the training data size (usually)
+    - random forest randomly chooses input labels
+-----------
+
+Ana Maria Delgado? did some research 
+
+-----------
+
+- look at predictions at training set vs test set
+- if you have reasonable predictions for training set but bad values for test, then you probably overfitted
+- if your test data is very different from your training data
+
+next exercise:
+gaussian noise
+some photons in x, y gaussian
+numpy.random.normal(shape=(128,128))
+
+- start working with actual data
+    - estimate mass instead of width of gaussian
+
+PLAYING WITH DIFFERENT MODELS.
+- or try new neural network with gaussians
+    - ideas to change in arch.
+        - input and output is an image => segmentation maps
+            - output is an image of 0s and 1s of where cluster is
+            - goes from image to image, so stay with image size with the convolutions
+                - e.g. no pooling?
+            - try out just with convolutions first (padding set such that it retains image shape)
+        - use x or y or both value of the center as a label
+            - maybe use normalized value of x and y (set 0 to 128 scale to 0 to 1 instead)
+        - classification model: images that are just noise, vs cluster positive images
+            - cluster or not cluster
+            - softmax activation layer just before output, forces it to be from 0 to 1
+            - good loss functions for classification
+    - classification or segmentation map would be likely?
