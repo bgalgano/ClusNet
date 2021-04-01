@@ -1,6 +1,0 @@
-/software/lmod/lmod/init/bash: line 70: conda: command not found
-/home-3/mntampa1@jhu.edu/.conda/envs/python3.8/bin/python
-QStandardPaths: XDG_RUNTIME_DIR points to non-existing path '/run/user/4939', please create it with 0700 permissions.
-xkbcommon: ERROR: failed to add default include path /usr/share/X11/xkb
-Qt: Failed to create XKB context!
-Use QT_XKB_CONFIG_ROOT environmental variable to provide an additional search path, add ':' as separator to provide several search paths and/or make sure that XKB configuration data directory contains recent enough contents, to update please see http://cgit.freedesktop.org/xkeyboard-config/ .
