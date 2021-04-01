@@ -1,0 +1,67 @@
+To-do:
+- improved: saving of model assests and weights
+- improved: organization of model information
+
+
+Notes to self and detailed tasks completed
+- re-evaluated status/understanding of cuda/anaconda3 modules and environments with MARCC
+- trying to optimize GPU/tensorflow interaction with latest version of tensorflow and utilizing GPU (setting correct environments, e.g. above)
+- fixing performance discrepancies between local machine and MARCC (MARCC performing better now)
+    - kind of a solution?? using debug gpu to perform tasks. (interact command), uses gpu
+    - 1s per epoch from 6-8s per epoch
+- analyzed loss and accuracy across epoch: 1to1 figures improve but loss function is basically flat for most later epochs
+- rethinking changing compliler settings to improve loss function
+- use "mirror" images as part of training
+
+RUNS:
+    gpu: debug for all
+
+explored:
+    - +/- epoch number (slight improvement)
+    - changing loss function from mse to mae to huber (no improvement) at epoch = 100
+    - * winning run
+    - changing compiler function from adam to sdg
+    - 
+
+problem: cannot seem to properly actually use gpu power on MARCC (s per epoch is just as slow on local machine)
+
+center_x_y/Zi2er/
+epochs = 250 
+loss: mse
+TIME: 0:05:47.747483
+
+[*] center_x_y/63lOm/
+epochs = 300
+loss: mse
+TIME: 0:06:50.873052
+
+center_x_y/BAclh
+epochs = 100
+loss: mae
+
+center_x_y/zGKrU
+epochs = 100
+loss: Huber
+
+center_x_y/wWXVU
+epochs = 100
+loss: logCosh
+
+center_x_y/NEuj2
+epochs = 100
+loss: mae
+optimizer: sgd
+
+
+to-do-list
+    - epoch = 10
+    - get time difference between sbatch and interact
+    - write email help to marcc
+    - with script commands
+    - cc Michelle and Jonathan 
+
+question
+    - alexnet using classificaiton, why are we using it for regression?
+        - historical, trying to get the reader to not bite off more than they can chew
+    - 3-4 years in convolutional neural networks first in astronomy
+    - 
