@@ -336,17 +336,11 @@ def main():
     # print settings
     np.set_printoptions(precision=3, suppress=True)
 
-    mode = 'crab'
-    home = os.path.expanduser("~")
-    if mode == 'crab':
-        home = '/home-1/bgalgan1@jhu.edu'
-    if mode == 'cpu':
-        home = home + '/repos/neural/CNNs/center_pix'
-        
-    spath = home + '/models'
+    cwd = os.getcwd()
+    spath = cwd + '/models'
     
     im_size = 128
-    set_size = 1000
+    set_size = 100
 
     # create gaussian dataset
     dataset = create_set(im_size=im_size,set_size=set_size)
@@ -358,7 +352,7 @@ def main():
     
     input_shape = (im_size,im_size,1) # width, height, channel number
     pool_size = (2,2)
-    kernel_size = (6,6)
+    kernel_size = (3,3)
     activation = 'relu'
     strides = 2
     
@@ -373,7 +367,7 @@ def main():
     opt = Adam()
     loss = tf.keras.losses.MeanAbsoluteError()
     metrics = ["accuracy"]
-    epochs = 1500
+    epochs = 2
     
     model.compile(optimizer=opt,
                   loss=loss, 

@@ -1,9 +1,10 @@
-#!/Users/mcp/opt/anaconda3/bin/python
+#!/code/envs/tf/bin/python
 # -*- coding: utf-8 -*-
 # Brianna Galgano
 # code to create CNN of gaussian profile
 
 # Imports
+#/anaconda3/envs/tf-cpu/bin/python
 
 import matplotlib.pylab as plt
 import matplotlib as mpl
@@ -172,10 +173,10 @@ def create_set(set_size=1000,im_size=128,noise=True,shift=True,flip=True):
             x_ud = copy.copy(x)
 
             # flip all left/right and up/down
-            x.flip_lrud()
-            x_lrud = copy.copy(x)
+            #x.flip_lrud()
+         
             
-            dataset.extend([x_copy,x_lr,x_ud,x_lrud])
+            dataset.extend([x_copy,x_lr,x_ud])
             
         else:
             dataset.append(x)
@@ -226,21 +227,24 @@ def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_s
     
     model.add(keras.Input(shape=(im_size,im_size,1)))
     
-    padding = 'valid'
+    padding = 'same'
     # 1. 3×3 convolution with 16 filters
-    model.add(layers.Conv2D(filters=16, kernel_size=kernel_size, activation=activation,padding=padding))
+    model.add(layers.Conv2D(filters=16, kernel_size=kernel_size, 
+activation=activation,padding=padding))
     
     # 2. 2×2, stride-2 max pooling
     model.add(layers.MaxPooling2D(pool_size=pool_size, strides=strides))
 
     # 3. 3×3 convolution with 32 filters
-    model.add(layers.Conv2D(filters=32, kernel_size=kernel_size, activation=activation,padding=padding))
+    model.add(layers.Conv2D(filters=32, kernel_size=kernel_size, 
+activation=activation,padding=padding))
 
     # 4. 2×2, stride-2 max pooling
     model.add(layers.MaxPooling2D(pool_size=pool_size, strides=strides))
 
     # 5. 3×3 convolution with 64 filters
-    model.add(layers.Conv2D(filters=64, kernel_size=kernel_size, activation=activation,padding=padding))
+    model.add(layers.Conv2D(filters=64, kernel_size=kernel_size, 
+activation=activation,padding=padding))
 
     # 6. 2×2, stride-2 max pooling
     model.add(layers.MaxPooling2D(pool_size=pool_size, strides=strides))
@@ -268,10 +272,11 @@ def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_s
 
     model.summary()
     return model
+
 def plot_1tot1(y_train,y_train_model,validation_y,validation_y_model,spath,model_id):
     fig, ax = plt.subplots(nrows=1,ncols=3,figsize=(10,3),sharey=False,sharex=False)
 
-    for y, y_model, label in zip([y_train,validation_y],[y_train_model,validation_y_model],['Traini$
+    for y, y_model, label in zip([y_train,validation_y],[y_train_model,validation_y_model],['Training data','Validation data']):
         for idx, ax_label in zip([0,1,2], ['X','Y','Sigma']):
 
             ax[idx].scatter(y[:,idx],y_model[:,idx],s=5,marker=".",label=label)
@@ -289,13 +294,13 @@ def plot_1tot1(y_train,y_train_model,validation_y,validation_y_model,spath,model
     ax[2].set_ylim(0,0.25)
     ax[2].set_ylim(0,0.25)
     plt.subplots_adjust(wspace=0.01)
-    plt.savefig(spath + '/1to1_center_xy_{}.png'.format(model_id), dpi=200,
+    plt.savefig(spath + '/1to1_center_xy_{}.png'.format(model_id), dpi=200, 
 bbox_inches='tight')
-
+    
     print("\n---> 1to1 plot saved to:", spath)
 
     #plt.show()
-
+    
     plt.close()
     
 def plot_metrics(history,spath,model_id):
@@ -306,10 +311,12 @@ def plot_metrics(history,spath,model_id):
         ax[idx].plot(history.history['val_' + stat])
         ax[idx].set_ylabel(stat)
     plt.xlabel('epoch')
-    plt.subplots_adjust(hspace=0)
+    plt.subplots_adjust(hspace=0.01)
     plt.legend(['train', 'valid'],ncol=2,frameon=False)
-    
-    plt.savefig(spath + '/accuracy_loss_{}.png'.format(model_id),dpi=200, bbox_inches='tight')
+    ax[0].set_ylim(0.40,1)
+    ax[1].set_xlim(0,0.1)
+    plt.savefig(spath + '/accuracy_loss_{}.png'.format(model_id),dpi=200, 
+bbox_inches='tight')
     #plt.show()
     print('\n---> metrics plot saved to',spath)
 
@@ -329,24 +336,20 @@ def main():
     # print settings
     np.set_printoptions(precision=3, suppress=True)
 
-    mode = 'cpu'
-    home = os.path.expanduser("~")
-    if mode == 'crab':
-        home = '/home-1/bgalgan1@jhu.edu'
-    if mode == 'cpu':
-        home = home + '/repos/neural/CNNs/center_pix'
-        
-    spath = home + '/models'
+    cwd = os.getcwd()
+    spath = cwd + '/models'
     
     im_size = 128
-    set_size = 1000
-    
+    set_size = 100
+
     # create gaussian dataset
     dataset = create_set(im_size=im_size,set_size=set_size)
     
     # create training set preview figure
     # plot(dataset=dataset, spath=spath)
-        
+    
+    x_train, y_train = load_dataset(dataset)
+    
     input_shape = (im_size,im_size,1) # width, height, channel number
     pool_size = (2,2)
     kernel_size = (3,3)
@@ -362,7 +365,7 @@ def main():
     
     # compiler
     opt = Adam()
-    loss = tf.keras.losses.MeanSquaredError()
+    loss = tf.keras.losses.MeanAbsoluteError()
     metrics = ["accuracy"]
     epochs = 2
     
@@ -396,14 +399,13 @@ def main():
     model_dir = spath + '/' + model_id
     os.mkdir(model_dir)
     
-    # serialize weights to HDF5
-    model.save(model_dir + "/model_{}".format(model_id))
-    print("Model assets saved to:", model_dir)
-    
     # serialize model to YAML
     model_yaml = model.to_yaml()
-    with open(model_dir+"/model_{}/{}.yaml".format(model_id,model_id), "w") as yaml_file:
+    with open(model_dir+"/model_{}.yaml".format(model_id), "w") as yaml_file:
         yaml_file.write(model_yaml)
+    # serialize weights to HDF5
+    model.save_weights(model_dir + "/wgts_{}.h5".format(model_id))
+    print("Model assets saved to:", model_dir)
 
     # plot loss and accuracy
     plot_metrics(history=history,spath=model_dir,model_id=model_id)
@@ -426,5 +428,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-
- 
