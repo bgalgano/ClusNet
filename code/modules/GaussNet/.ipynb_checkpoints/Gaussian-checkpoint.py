@@ -305,16 +305,17 @@ bbox_inches='tight')
     
 def plot_metrics(history,spath,model_id):
     
-    fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(6,5),sharex=True)
+    fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(7,5),sharex=True)
     for idx, stat in zip([0,1],['accuracy','loss']):
         ax[idx].plot(history.history[stat])
         ax[idx].plot(history.history['val_' + stat])
         ax[idx].set_ylabel(stat)
     plt.xlabel('epoch')
-    plt.subplots_adjust(hspace=0.01)
     plt.legend(['train', 'valid'],ncol=2,frameon=False)
     ax[0].set_ylim(0.40,1)
     ax[1].set_xlim(0,0.1)
+    plt.tight_layout()
+
     plt.savefig(spath + '/accuracy_loss_{}.png'.format(model_id),dpi=200, 
 bbox_inches='tight')
     #plt.show()
@@ -399,20 +400,29 @@ def main():
     model_dir = spath + '/' + model_id
     os.mkdir(model_dir)
     
+    print("--->Model saved to:", model_dir)
+    model.save(model_dir)
+
+    """
     # serialize model to YAML
     model_yaml = model.to_yaml()
     with open(model_dir+"/model_{}.yaml".format(model_id), "w") as yaml_file:
         yaml_file.write(model_yaml)
+        
     # serialize weights to HDF5
     model.save_weights(model_dir + "/wgts_{}.h5".format(model_id))
     print("Model assets saved to:", model_dir)
-
+    """
+    
     # plot loss and accuracy
     plot_metrics(history=history,spath=model_dir,model_id=model_id)
     
     # predict labels from model
     print("\nPredicting training labels:")
-    y_train_model = model.predict(x_train,verbose=1)
+    y_train_model = model.predict(x_train,verbose=1)    
+    
+
+
     
     # plot 1-to-1
     
