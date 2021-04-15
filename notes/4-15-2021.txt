@@ -1,0 +1,3 @@
+Questions:
+
+Do training for all clusters in eROSITA nobackground or a portion? 80%?

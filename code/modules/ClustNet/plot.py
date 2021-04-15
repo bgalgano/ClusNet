@@ -48,7 +48,7 @@ def plot_cluster(fpath=None,save_dir=None,addBackground=True,circle=True,instrum
     cax = divider.append_axes("right", size="5%", pad=0.12)
 
     plt.colorbar(im, cax=cax)
-    ax.set_xticks(np.linspace(0,384,7))
+    ax.set_xticks(np.linspace(0,,7))
     ax.set_yticks(np.linspace(0,384,7))
 
     ax.set_xlabel("x"), ax.set_ylabel("y")
