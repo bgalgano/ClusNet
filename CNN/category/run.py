@@ -1,4 +1,5 @@
-#!/opt/anaconda3/bin/python
+#!/home-net/home-1/bgalgan1@jhu.edu/code/env
+
 # -*- coding: utf-8 -*-
 # Brianna Galgano
 # code to apply category CNN to eROSITA clusters
@@ -128,6 +129,8 @@ bbox_inches='tight')
 
 
 def main():
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
     k = 'all'
     epochs = 300
 
