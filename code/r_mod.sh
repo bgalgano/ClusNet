@@ -25,5 +25,4 @@ conda activate /home-net/home-1/bgalgan1@jhu.edu/code/env/tf
 
 # run script
 which python
-python /home-1/bgalgan1@jhu.edu/repos/ClustNet/code/load_model.py
-
+python /home-1/bgalgan1@jhu.edu/repos/ClusNet/code/load_model.py

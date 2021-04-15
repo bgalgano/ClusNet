@@ -1,4 +1,5 @@
-#!/opt/anaconda3/bin/python
+#!/anaconda3/bin/python
+#/opt/anaconda3/bin/python
 
 # matplotlib
 import matplotlib.pylab as plt
