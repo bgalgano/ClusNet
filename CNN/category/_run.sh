@@ -20,7 +20,7 @@ ml anaconda/2019.03
 ml cuda/10.1
 
 # activate conda environment
-conda activate /home-net/home-1/bgalgan1@jhu.edu/code/env
+conda activate /home-net/home-1/bgalgan1@jhu.edu/code/tf-new
 
 # run script
 which python

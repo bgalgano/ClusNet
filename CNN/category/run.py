@@ -1,4 +1,4 @@
-#!/home-net/home-1/bgalgan1@jhu.edu/code/env
+#!/home-net/home-1/bgalgan1@jhu.edu/code/tf-new
 
 # -*- coding: utf-8 -*-
 # Brianna Galgano
@@ -32,7 +32,11 @@ from datetime import timedelta
 from time import gmtime, strftime
 import time 
 
-sys.path.append('../../code/modules/')
+from os.path import expanduser
+home = expanduser("~")
+
+sys.path.append(home+'/repos/ClusNet/code/modules/')
+
 from ClustNet import Cluster
 
 def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_size=384):
@@ -176,6 +180,8 @@ def main():
 
     # model fitting
     x_train, y_train = Cluster.load_dataset(k=k)
+    print(x_train,y_train)
+
     validation_split = 0.2
     batch_size = x_train.shape[0]
 

@@ -13,8 +13,10 @@ import sys
 from astropy.io import fits
 import random
 import time
-
-clusterList = np.load('../../data/eROSITA_no_background/clusterList.npy')
+from os.path import expanduser
+home = expanduser("~")
+cluster_path = '/repos/ClusNet/data/eROSITA_no_background/clusterList.npy'
+clusterList=np.load(home+cluster_path)
 #clusterDir = np.load('../../data/eROSITA_no_background/')
 
 class Cluster:
