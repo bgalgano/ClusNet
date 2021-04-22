@@ -92,6 +92,31 @@ activation=activation,padding=padding))
     model.summary()
     return model
 
+def plot_resid(y_train,y_train_model,validation_y,validation_y_model,spath,model_id):
+    fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(5,5),sharex=False)
+    
+    y_model_ones = y_train_model[y_train==1]
+    y_model_zeros = y_train_model[y_train==0]
+               
+    y_valid_ones = validation_y_model[validation_y==1]    
+    y_valid_zeros = validation_y_model[validation_y==0]    
+               
+    ax[0].hist(y_valid_ones,label='valid')
+    ax[0].hist(y_model_ones,label='train')
+    ax[0].axvline(1,color='black',lw=1)
+    
+    ax[1].hist(y_valid_zeros,label='valid')
+    ax[1].hist(y_model_zeros,label='train')
+    ax[1].axvline(0,color='black',lw=1)
+           
+    plt.xlabel('Label Residual')
+    plt.subplots_adjust(hspace=0)
+    figpath = spath + '/resid_{}.png'.format(model_id)
+    plt.savefig(figpath,dpi=200,bbox_inches='tight')
+    #plt.show()
+    print('\n---> residual plot saved to:',figpath)
+               
+
 def plot_1to1(y_train,y_train_model,validation_y,validation_y_model,spath,model_id):
     fig, ax = plt.subplots(nrows=1,ncols=1,figsize=(5,5),sharey=False,sharex=False)
 
@@ -219,6 +244,14 @@ def main():
     
     # plot 1-to-1
     plot_1to1(y_train=y_train,
+              y_train_model=y_train_model,
+              validation_y=validation_y,
+              validation_y_model=validation_y_model,
+              spath=modeldir,
+              model_id=model_id)
+    
+    # plot residuals
+    plot_resid(y_train=y_train,
               y_train_model=y_train_model,
               validation_y=validation_y,
               validation_y_model=validation_y_model,
