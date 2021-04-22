@@ -135,8 +135,8 @@ bbox_inches='tight')
 def main():
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-    k = 'all'
-    epochs = 2
+    k = 0.80
+    epochs = 100
 
     os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -180,8 +180,7 @@ def main():
 
     # model fitting
     x_train, y_train = Cluster.load_dataset(k=k)
-    print(x_train,y_train)
-
+   
     validation_split = 0.2
     batch_size = x_train.shape[0]
 
@@ -195,7 +194,7 @@ def main():
     history = model.fit(x=x_train[:split_at],
                         y=y_train[:split_at],
                         epochs=epochs,
-                        batch_size=batch_size,
+                        batch_size=2,
                         validation_data=(validation_x, validation_y),
                         verbose=2)
     print("***LEARNING END***")
@@ -204,7 +203,8 @@ def main():
 
     # create directory to save model information
     model_id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-    spath = '../../models/category'
+    
+    spath = home+'/repos/ClusNet/models/category'
     model_dir = spath + '/' + model_id
     os.mkdir(model_dir)
     model.save(model_dir)
@@ -230,3 +230,4 @@ def main():
 if __name__ == "__main__":
     main()
     
+
