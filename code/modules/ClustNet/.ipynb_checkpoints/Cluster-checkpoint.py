@@ -13,10 +13,12 @@ import sys
 from astropy.io import fits
 import random
 import time
-
-clusterList = np.load('../../data/eROSITA_no_background/clusterList.npy')
-#clusterDir = np.load('../../data/eROSITA_no_background/')
-
+from os.path import expanduser
+home = expanduser("~")
+repodir = home + '/repos/ClusNet/'
+clusterList = np.load(repodir + 'data/eROSITA_no_background/clusterList.npy')
+clusterDir = repodir + 'data/eROSITA_no_background/'
+GLOBDIR = clusterDir
 class Cluster:
     def __init__(self, fpath=None):
         
@@ -183,8 +185,8 @@ class Cluster:
         plt.close()
         return None
     
-def load_dataset(k='all', globdir='../../data/eROSITA_no_background/*.fits',norm=True,addneg=True):
-    clusglob = glob(globdir)
+def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True):
+    clusglob = glob(globdir+'*.fits')
     if type(k) == float and k < 1:
         k = int(k*len(clusglob))    
     if k == 'all':
@@ -226,10 +228,10 @@ def load_dataset(k='all', globdir='../../data/eROSITA_no_background/*.fits',norm
     return x_train, y_train
 
 
-def plot(spath="./",globdir='../../data/eROSITA_no_background/*.fits'):
+def plot(spath="./",globdir=GLOBDIR):
     
     fig, axes = plt.subplots(nrows=5,ncols=5,figsize=(6,6))
-    clusglob = glob(globdir)
+    clusglob = glob(globdir + '*.fits')
     clusfpaths = random.choices(clusglob,k=25)
     dataset = []
     for clusfpath in clusfpaths:
