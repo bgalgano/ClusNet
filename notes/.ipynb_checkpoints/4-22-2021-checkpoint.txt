@@ -1,0 +1,53 @@
+Done over last week:
+    - got BlueCrabs working (finally)
+        - somehow worked without marcc help
+        - but still want to ask MARCC help how these paritions work and what the issue was
+        - use interact commands
+            - GPUs = 4
+            - CPUs = 24
+            - partition = gpuk80
+            - nodelist = gpu019
+    - ran first classification model with eROSITA data
+        - cluster or not?
+
+Questions:
+- classification model = 'category/bQblI'
+    - goal: is or is not a cluster present?
+    - classification (1 output neuron)
+        - 0 for no cluster (just poisson noise)
+        - 1 for cluster
+    - initial modeling:
+        - opt: 'sgd'
+        - act: 'sigmoid'
+        - loss: 'BinaryCrossentropy'
+        - epochs: 100
+        - 384 x 384
+        - Data sample:
+            - ~1800 clusters (80% of total sample)
+            - ~1800 negatives
+            - add. 20% validation cut
+                - ~1500 training clusters
+        - runtime: ~40 minutes
+
+Issues with model:
+    - from the get-go training set outperformed validation set
+    - all output neurons (validation and training) is 0.6
+    - weird accuracy for validation (0 for all epochs)
+    
+Suspected issue:
+    - incorrect loading of dataset
+        - negatives and positives input order is not randomized
+            - e.g. validation only has negatives because it takes last 20% of dataset
+            - dataset split in first half to positives, second half to negatives
+To-do:
+    - fix issue with initial model (probably random locations of dataset)
+    - implement ROC curves to test performance once we have a reasonable model
+    
+------
+
+Other questions:
+    - how to grab the history of a previously saved model?
+        - want to plot loss/accuracy of any saved model
+    - fundamentally, is classification just a regression model with one label?
+    - is the order of labels or images randomized when fitting/training a model?
+    - how can I efficently save the unique data set I train a model with, and reload if necessary?

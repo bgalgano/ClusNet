@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import sys
 from astropy.io import fits
-import random
+import random, string
 import time
 from os.path import expanduser
 home = expanduser("~")
@@ -185,17 +185,19 @@ class Cluster:
         plt.close()
         return None
     
-def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True):
+def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,validation_split=0.20):
     clusglob = glob(globdir+'*.fits')
     if type(k) == float and k < 1:
         k = int(k*len(clusglob))    
     if k == 'all':
         k = len(clusglob)
     clusfpaths = random.choices(clusglob,k=k)
+    clusfpaths = np.array(clusfpaths)
 
     x_train = []
     y_train = []
-    print("\nLoading {:} clusters...".format(k))
+    print("Loading {:} clusters...".format(k))
+    savepaths = []
     for i, clusfpath in enumerate(clusfpaths):   
         
         x = Cluster(fpath=clusfpath)
@@ -206,9 +208,10 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True):
             image = x.image
         x_train.append(image)
         y_train.append(1)
+        savepaths.append(clusfpath)
         
     if addneg:
-        print('Adding {:} negatives...'.format(k))
+        print('-Adding {:} negatives...'.format(k))
         for i in range(0,k):
             x_noise = Cluster()
             x_noise.add_noise()
@@ -218,39 +221,107 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True):
                 image = x_noise.image
             x_train.append(image)
             y_train.append(0)
+            savepaths.append('noise')
 
     x_train = np.array(x_train)
     y_train = np.array(y_train)
-    print("Done.")
-    print('\nX labels shape:', x_train.shape)
-    print('Y labels shape:', y_train.shape)
-    x_train = x_train.reshape(-1, 384, 384, 1)
-    return x_train, y_train
-
-
-def plot(spath="./",globdir=GLOBDIR):
+    savepaths = np.array(savepaths)
     
-    fig, axes = plt.subplots(nrows=5,ncols=5,figsize=(6,6))
-    clusglob = glob(globdir + '*.fits')
-    clusfpaths = random.choices(clusglob,k=25)
-    dataset = []
-    for clusfpath in clusfpaths:
-        dataset.append(Cluster(fpath=clusfpath))
+    idx = list(range(k*2))
+    random.shuffle(idx)
+    x_train = x_train[idx]
+    y_train = y_train[idx]
+    savepaths = savepaths[idx]
+    
+    # split data set into validation and training
+    # 80% training, 20% validation
+    split_at = int(x_train.shape[0] * (1-validation_split))
+
+    validation_data = (x_train[split_at:].reshape(-1, 384, 384, 1), y_train[split_at:].reshape((-1,1)))
+    training_data = (x_train[:split_at].reshape(-1, 384, 384, 1),y_train[:split_at].reshape((-1,1)))
+    
+                         # print out label shapes
+    print("Done.")
+    print('\nTraining image shape:', training_data[0].shape)
+    print('Training labels shape:', training_data[1].shape)
+                     
+    print('\nValidation image shape:', validation_data[0].shape)
+    print('Validation labels shape:', validation_data[1].shape)
+                     
+    modeldir = mkdir_model(spath=home+'/repos/ClusNet/models/category')
+    
+    if savefpaths:
+        print("\nSaving dataset paths to-->",modeldir)
+        training_cluspaths = savepaths[:split_at]
+        validation_clusfpaths = savepaths[split_at:]
         
+        np.savetxt(fname=modeldir+"/tr_paths.txt",X=training_cluspaths,delimiter="\n",fmt="%s")
+        np.savetxt(fname=modeldir+"/val_paths.txt",X=validation_clusfpaths,delimiter="\n",fmt="%s")
+    return training_data, validation_data, modeldir
+
+def mkdir_model(spath=home+'/repos/ClusNet/models/category'):
+    # create directory to save model information
+    model_id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+    modeldir = spath + '/' + model_id
+    
+    print("\nModel directory created -->",modeldir)
+    os.mkdir(modeldir)
+    
+    return modeldir
+    
+def plot(spath="./",clusfpaths=None,globdir=None,size=5):
+    nrows = size
+    ncols = size
+    k = nrows * ncols
+    fig, axes = plt.subplots(nrows=nrows,
+                             ncols=ncols,
+                             figsize=(6,6))
+    
+    
+    #clusglob = glob(globdir + '*.fits')
+    #clusfpaths = random.choices(clusglob,k=k)
+    
+    dataset = []
+    labels = []
+    for clusfpath in clusfpaths:
+        
+        pos = Cluster(fpath=clusfpath)
+        pos.add_noise()
+        dataset.append(pos)
+        labels.append(1)
+        
+        neg = Cluster()
+        neg.add_noise()
+        dataset.append(neg)
+        labels.append(0)
+        
+    x = list(range(k*2))
+    random.shuffle(x)
+    idx = random.choices(x, k=k)
+    
+    dataset = np.array(dataset)[idx]
+    labels = np.array(labels)[idx]
+    
     for i, ax in enumerate(axes.flat):
         prof = dataset[i]
-        prof.add_noise()
+
         image = prof.image/384
         cmap = plt.cm.viridis
-        ax.imshow(np.log10(image),interpolation='none',cmap=cmap,norm=mpl.colors.LogNorm())
-        ax.set_yticks([])
-        ax.set_xticks([])
+        cmap.set_bad(color='gray')
+        ax.imshow(image,interpolation='none',cmap=cmap)
+        ax.text(0.90, 0.90,labels[i],
+                horizontalalignment='center',
+                verticalalignment='center',
+                transform = ax.transAxes,
+                color="white",
+               weight='bold')
+        ax.set_yticks([]), ax.set_xticks([])
         
     space = 0.05
     plt.tight_layout()
     plt.subplots_adjust(wspace=space,hspace=space)
-    fpath = spath+'dataset_10x10_view.png'
-    plt.savefig(fpath,dpi=300)
+    fpath = spath + 'dataset_{}x{}_view.png'.format(size,size)
+    #plt.savefig(fpath,dpi=300)
     plt.show()
     plt.close()
     print("\nDataset preview saved to:", fpath)

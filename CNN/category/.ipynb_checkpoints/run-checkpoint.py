@@ -1,4 +1,4 @@
-#!/home-net/home-1/bgalgan1@jhu.edu/code/env
+#!/home-net/home-1/bgalgan1@jhu.edu/code/tf-new
 
 # -*- coding: utf-8 -*-
 # Brianna Galgano
@@ -26,13 +26,18 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from keras.models import model_from_yaml
+from keras.callbacks import CSVLogger
 
 from datetime import timedelta
 
 from time import gmtime, strftime
 import time 
 
-sys.path.append('../../code/modules/')
+from os.path import expanduser
+home = expanduser("~")
+
+sys.path.append(home+'/repos/ClusNet/code/modules/')
+
 from ClustNet import Cluster
 
 def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_size=384):
@@ -41,6 +46,7 @@ def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_s
     model.add(keras.Input(shape=(im_size,im_size,1)))
 
     padding = 'same'
+    
     # 1. 3×3 convolution with 16 filters
     model.add(layers.Conv2D(filters=16, kernel_size=kernel_size,
 activation=activation,padding=padding))
@@ -81,7 +87,7 @@ activation=activation,padding=padding))
     model.add(layers.Dense(units=20,activation=activation))
 
     # 13. output neuron
-    model.add(layers.Dense(units=1,activation=activation))
+    model.add(layers.Dense(units=1,activation='sigmoid'))
 
     model.summary()
     return model
@@ -99,11 +105,12 @@ def plot_1to1(y_train,y_train_model,validation_y,validation_y_model,spath,model_
     plt.legend(frameon=False)
     plt.xticks([0,1])
     plt.tight_layout()
-    plt.savefig(spath + '/1to1_center_xy_{}.png'.format(model_id),
+    figpath = spath + '/1to1_center_xy_{}.png'.format(model_id)
+    plt.savefig(figpath,
                 dpi=200,
                 bbox_inches='tight')
 
-    print("\n---> 1to1 plot saved to:", spath)
+    print("\n---> 1to1 plot saved to:", figpath)
     print()
 
     #plt.show()
@@ -114,25 +121,23 @@ def plot_metrics(history,spath,model_id):
 
     fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(6,5),sharex=True)
     for idx, stat in zip([0,1],['accuracy','loss']):
-        ax[idx].plot(history.history[stat])
-        ax[idx].plot(history.history['val_' + stat])
+        ax[idx].plot(history.history[stat],color='#FF5733')
+        ax[idx].plot(history.history['val_' + stat],color='#21E332')
         ax[idx].set_ylabel(stat)
-    plt.xlabel('epoch')
-    plt.subplots_adjust(hspace=0.01)
-    plt.legend(['train', 'valid'],ncol=2,frameon=False)
-    ax[0].set_ylim(0.40,1)
-    ax[1].set_xlim(0,0.1)
-    plt.savefig(spath + '/accuracy_loss_{}.png'.format(model_id),dpi=200,
-bbox_inches='tight')
+    plt.xlabel('Epoch')
+    plt.subplots_adjust(hspace=0)
+    plt.legend(['train set', 'valid set'],ncol=2,frameon=False)
+    figpath = spath + '/accuracy_loss_{}.png'.format(model_id)
+    plt.savefig(figpath,dpi=200,bbox_inches='tight')
     #plt.show()
-    print('\n---> metrics plot saved to',spath)
+    print('\n---> metrics plot saved to:',figpath)
 
 
 def main():
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-    k = 'all'
-    epochs = 2
+    k = 0.01
+    epochs = 10
 
     os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -155,7 +160,7 @@ def main():
     input_shape = (im_size,im_size,1) # width, height, channel number
     pool_size = (2,2)
     kernel_size = (3,3)
-    activation = 'sigmoid'
+    activation = 'relu'
     strides = 2
 
     print("\nMODEL:")
@@ -167,7 +172,7 @@ def main():
 
     # compiler
     metrics = ["accuracy"]
-    opt='sgd'
+    opt='Adam'
     
     loss=tf.keras.losses.BinaryCrossentropy()
     model.compile(optimizer=opt,
@@ -175,52 +180,53 @@ def main():
                   metrics=metrics)
 
     # model fitting
-    x_train, y_train = Cluster.load_dataset(k=k)
-    validation_split = 0.2
-    batch_size = x_train.shape[0]
-
-    split_at = int(x_train.shape[0] * (1-validation_split))
-    validation_x = x_train[split_at:]
-    validation_y = y_train[split_at:]
-    validation_data=(validation_x, validation_y)
-    
-    print("\n***LEARNING START***")
+    training_data, validation_data, modeldir = Cluster.load_dataset(k=k,validation_split=0.20)
+    x_train, y_train = training_data
+    validation_x, validation_y = validation_data
+    batch_size = 2
+    print("\n********LEARNING START********")
     start = time.time()
-    history = model.fit(x=x_train[:split_at],
-                        y=y_train[:split_at],
+    
+    model_id = os.path.basename(os.path.normpath(modeldir))
+    csv_logger = CSVLogger(modeldir+'/history_{}.log'.format(model_id), separator=',', append=False)
+
+    history = model.fit(x=x_train,
+                        y=y_train,
                         epochs=epochs,
                         batch_size=batch_size,
                         validation_data=(validation_x, validation_y),
-                        verbose=2)
-    print("***LEARNING END***")
+                        verbose=2,
+                       callbacks=[csv_logger])
+    
+
+
+    print("********LEARNING END********")
     elapsed = time.time() - start
     print("\nTIME:",str(timedelta(seconds=elapsed)))
-
-    # create directory to save model information
-    model_id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-    spath = '../../models/category'
-    model_dir = spath + '/' + model_id
-    os.mkdir(model_dir)
-    model.save(model_dir)
-    print("Model assets saved to:", model_dir)
+    
+    # save model assets
+    print("\nModel assets saved to:", modeldir)
+    model.save(modeldir)
     
     # plot loss and accuracy
     plot_metrics(history=history,
-                 spath=model_dir,
+                 spath=modeldir,
                  model_id=model_id)
-    print("\nPredicting training labels:")
-        
+    
+    print("\nPredicting labels:")
+    y_train_model = model.predict(x_train,verbose=1,batch_size=batch_size)
+    validation_y_model = model.predict(validation_x,verbose=1,batch_size=batch_size)
+    
     # plot 1-to-1
-    y_train_model = model.predict(x_train,verbose=1)
-    validation_y_model = model.predict(validation_x,verbose=1)
     plot_1to1(y_train=y_train,
               y_train_model=y_train_model,
               validation_y=validation_y,
               validation_y_model=validation_y_model,
-              spath=model_dir,
+              spath=modeldir,
               model_id=model_id)
     
     
 if __name__ == "__main__":
     main()
     
+
