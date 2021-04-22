@@ -132,7 +132,7 @@ def main():
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
     k = 'all'
-    epochs = 300
+    epochs = 2
 
     os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -198,7 +198,7 @@ def main():
 
     # create directory to save model information
     model_id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-    spath = '../../models'
+    spath = '../../models/category'
     model_dir = spath + '/' + model_id
     os.mkdir(model_dir)
     model.save(model_dir)
