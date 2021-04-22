@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pylab as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.colors import LogNorm
 
 import numpy as np
 import pandas as pd
@@ -83,7 +84,7 @@ class Cluster:
 
         return
         
-    def shift(self,delta=64/2):
+    def shift(self,delta=64):
         """
         shift cluster randomly within bounds of image
         """
@@ -223,3 +224,31 @@ def load_dataset(k='all', globdir='../../data/eROSITA_no_background/*.fits',norm
     print('Y labels shape:', y_train.shape)
     x_train = x_train.reshape(-1, 384, 384, 1)
     return x_train, y_train
+
+
+def plot(spath="./",globdir='../../data/eROSITA_no_background/*.fits'):
+    
+    fig, axes = plt.subplots(nrows=5,ncols=5,figsize=(6,6))
+    clusglob = glob(globdir)
+    clusfpaths = random.choices(clusglob,k=25)
+    dataset = []
+    for clusfpath in clusfpaths:
+        dataset.append(Cluster(fpath=clusfpath))
+        
+    for i, ax in enumerate(axes.flat):
+        prof = dataset[i]
+        prof.add_noise()
+        image = prof.image/384
+        cmap = plt.cm.viridis
+        ax.imshow(np.log10(image),interpolation='none',cmap=cmap,norm=mpl.colors.LogNorm())
+        ax.set_yticks([])
+        ax.set_xticks([])
+        
+    space = 0.05
+    plt.tight_layout()
+    plt.subplots_adjust(wspace=space,hspace=space)
+    fpath = spath+'dataset_10x10_view.png'
+    plt.savefig(fpath,dpi=300)
+    plt.show()
+    plt.close()
+    print("\nDataset preview saved to:", fpath)
