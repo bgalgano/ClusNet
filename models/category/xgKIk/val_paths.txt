@@ -1,0 +1,10 @@
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/891639.fits
+noise
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/881355.fits
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/901735.fits
+noise
+noise
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/911770.fits
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/882544.fits
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/891591.fits
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/912403.fits

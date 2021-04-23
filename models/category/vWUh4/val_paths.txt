@@ -1,0 +1,10 @@
+noise
+noise
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/901915.fits
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/912462.fits
+noise
+noise
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/891499.fits
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/891492.fits
+noise
+/home-1/bgalgan1@jhu.edu/repos/ClusNet/data/eROSITA_no_background/881598.fits
