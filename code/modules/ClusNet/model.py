@@ -27,7 +27,7 @@ home = expanduser("~")
 
 sys.path.append(home+'/repos/ClusNet/code/modules/')
 
-from ClustNet import Cluster
+from Clus Net import Cluster
 
 def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_size=384):
     model = tf.keras.Sequential()

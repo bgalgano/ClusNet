@@ -19,6 +19,8 @@ repodir = home + '/repos/ClusNet/'
 clusterList = np.load(repodir + 'data/eROSITA_no_background/clusterList.npy')
 clusterDir = repodir + 'data/eROSITA_no_background/'
 GLOBDIR = clusterDir
+
+
 class Cluster:
     def __init__(self, fpath=None):
         
