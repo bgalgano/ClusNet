@@ -54,18 +54,18 @@ def main():
     print("\n Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
     print("Num CPUs Available: ", len(tf.config.list_physical_devices('CPU')))
     print()
-    #os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
+    os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
     #os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     # data
     im_size = 384
-    k = 0.80 # percentage of 
+    k = 0.50 # percentage of 
 
     # compiler
     metrics = ["accuracy"]
     opt=tf.keras.optimizers.Adam()
 
     # training 
-    epochs = 100
+    epochs = 50
     input_shape = (im_size,im_size,1) # width, height, channel number
     pool_size = (2,2)
     kernel_size = (3,3)
@@ -88,7 +88,7 @@ def main():
                   metrics=metrics)
     
     # load data
-    training_data, validation_data, modeldir = Cluster.load_dataset(k=k,validation_split=0.20,noise=False)
+    training_data, validation_data, modeldir = Cluster.load_dataset(k=k,validation_split=0.20,noise=True)
     x_train, y_train = training_data
     validation_x, validation_y = validation_data
     
