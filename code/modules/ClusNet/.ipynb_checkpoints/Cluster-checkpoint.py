@@ -229,27 +229,38 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
     y_train = np.array(y_train)
     savepaths = np.array(savepaths)
     
-    idx = list(range(k*2))
-    random.shuffle(idx)
+    im_size = x_train[0].shape[0] # 384
+    
+    idx = np.array(list(range(k*2)))
+    random.shuffle(idx) 
+    
     x_train = x_train[idx]
     y_train = y_train[idx]
+    
     savepaths = savepaths[idx]
     
     # split data set into validation and training
     # 80% training, 20% validation
     split_at = int(x_train.shape[0] * (1-validation_split))
 
-    validation_data = (x_train[split_at:].reshape(-1, 384, 384, 1), y_train[split_at:].reshape((-1,1)))
-    training_data = (x_train[:split_at].reshape(-1, 384, 384, 1),y_train[:split_at].reshape((-1,1)))
+    x_validation = x_train[split_at:].reshape(-1, 384, 384, 1)
+    y_validation = y_train[split_at:].reshape((-1,1))
+    
+    x_train = x_train[:split_at].reshape(-1, 384, 384, 1)
+    y_train = y_train[:split_at].reshape((-1,1))
+    validation_data = (x_validation, y_validation)
+    training_data = (x_train,y_train)
     
                          # print out label shapes
     print("Done.")
     print('\nTraining image shape:', training_data[0].shape)
     print('Training labels shape:', training_data[1].shape)
-                     
+    print('y_train', y_train)
+    
     print('\nValidation image shape:', validation_data[0].shape)
     print('Validation labels shape:', validation_data[1].shape)
-                     
+    print('y_validation', y_validation)
+
     modeldir = mkdir_model(spath=home+'/repos/ClusNet/models/category')
     
     if savefpaths:

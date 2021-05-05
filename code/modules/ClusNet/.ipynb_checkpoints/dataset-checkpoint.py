@@ -1,4 +1,5 @@
-#!/opt/anaconda3/bin/python
+#!/anaconda3/bin/python
+#/opt/anaconda3/bin/python
 
 # matplotlib
 import matplotlib.pylab as plt
@@ -203,44 +204,14 @@ def load_dataset(dataset,norm=True):
     else:
         norm_factor = 1
     
-    x_train, y_train = data[train_idx], labels[train_idx]/im_size
+    data = data/norm_factor
+    x_train, y_train = data[train_idx], labels[train_idx]
     x_train = x_train.reshape(-1, im_size, im_size, 1)
     print("\nDataset loaded.")
     print("Image input shape:", x_train.shape)
     print("Label input shape:", y_train.shape)
 
     return x_train, y_train
-
-
-def plot_1tot1(y_train,y_train_model,validation_y,validation_y_model,spath,model_id):
-    fig, ax = plt.subplots(nrows=1,ncols=3,figsize=(10,3),sharey=False,sharex=False)
-
-    for y, y_model, label in zip([y_train,validation_y],[y_train_model,validation_y_model],['Training data','Validation data']):
-        for idx, ax_label in zip([0,1,2], ['X','Y','Sigma']):
-
-            ax[idx].scatter(y[:,idx],y_model[:,idx],s=5,marker=".",label=label)
-
-            lims = [np.min([ax[idx].get_xlim(), ax[idx].get_ylim()]),
-                    np.max([ax[idx].get_xlim(), ax[idx].get_ylim()])]
-            ax[idx].plot(lims, lims, 'k-', alpha=1, zorder=0,lw=1)
-            ax[idx].set_aspect('equal')
-            ax[idx].set_xlim(lims), ax[idx].set_ylim(lims)
-            ax[idx].set_xlabel('Truth {}'.format(ax_label))
-            ax[idx].set_ylabel('Predicted {}'.format(ax_label))
-
-    plt.legend(frameon=False)
-    plt.tight_layout()
-    ax[2].set_ylim(0,0.25)
-    ax[2].set_ylim(0,0.25)
-    plt.subplots_adjust(wspace=0.01)
-    plt.savefig(spath + '/1to1_center_xy_{}.png'.format(model_id), dpi=200, 
-bbox_inches='tight')
-    
-    print("\n---> 1to1 plot saved to:", spath)
-
-    #plt.show()
-    
-    plt.close()
     
 def plot_metrics(history,spath,model_id):
     

@@ -1,0 +1,10 @@
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/892083.fits
+noise
+noise
+noise
+noise
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/881313.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/871184.fits
+noise
+noise
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/881586.fits

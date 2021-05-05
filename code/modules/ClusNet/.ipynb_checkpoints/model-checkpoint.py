@@ -82,7 +82,7 @@ activation=activation,padding=padding))
     return model
 
 def plot_resid(y_train,y_train_model,validation_y,validation_y_model,spath,model_id):
-    fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(5,5),sharex=False)
+    fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(5,5),sharex=False,sharey=True)
     
     y_model_ones = y_train_model[y_train==1]
     y_model_zeros = y_train_model[y_train==0]
@@ -93,13 +93,15 @@ def plot_resid(y_train,y_train_model,validation_y,validation_y_model,spath,model
     ax[0].hist(y_valid_ones,label='valid')
     ax[0].hist(y_model_ones,label='train')
     ax[0].axvline(1,color='black',lw=1)
+    ax[0].set_xlim(0,2)
     
     ax[1].hist(y_valid_zeros,label='valid')
     ax[1].hist(y_model_zeros,label='train')
     ax[1].axvline(0,color='black',lw=1)
-           
+    ax[1].set_xlim(-1,1) 
+    
     plt.xlabel('Label Residual')
-    plt.subplots_adjust(hspace=0)
+    plt.subplots_adjust(hspace=0.15)
     figpath = spath + '/resid_{}.png'.format(model_id)
     plt.savefig(figpath,dpi=200,bbox_inches='tight')
     #plt.show()
@@ -143,5 +145,5 @@ def plot_metrics(history,spath,model_id):
     plt.legend(['train set', 'valid set'],ncol=2,frameon=False)
     figpath = spath + '/accuracy_loss_{}.png'.format(model_id)
     plt.savefig(figpath,dpi=200,bbox_inches='tight')
-    plt.show()
+    #plt.show()
     print('\n---> metrics plot saved to:',figpath)
