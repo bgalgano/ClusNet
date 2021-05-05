@@ -1,15 +1,4 @@
 #!/bin/bash
-#SBATCH --output=out_gauss.out
-#SBATCH --error=err_gauss.err
-#SBATCH --job-name=cat
-#SBATCH --nodes=1
-#SBATCH --p=gpuk80
-#SBATCH --gres=gpu:1
-#SBATCH --mem=2GB
-#SBATCH --t=02:00:00
-#SBATCH --mail-user=bgalgan1@jhu.edu
-#SBATCH --mail-type=ALL
-
 export XDG_RUNTIME_DIR=/home-1/bgalgan1@jhu.edu
 
 # move to working directory

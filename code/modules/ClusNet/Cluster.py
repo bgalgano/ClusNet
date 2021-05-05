@@ -37,10 +37,7 @@ class Cluster:
             self.R500 = None
             self.Rpixel = None
             self.Tkev = None
-            
-            self.noise = np.random.poisson(lam=self.lam, size=self.image.shape)
-            self.image += self.noise
-            
+                        
         else:
             self.id = Path(fpath).stem
         
@@ -187,7 +184,7 @@ class Cluster:
         plt.close()
         return None
     
-def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,validation_split=0.20):
+def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,validation_split=0.20,noise=True):
     clusglob = glob(globdir+'*.fits')
     if type(k) == float and k < 1:
         k = int(k*len(clusglob))    
@@ -203,7 +200,8 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
     for i, clusfpath in enumerate(clusfpaths):   
         
         x = Cluster(fpath=clusfpath)
-        x.add_noise()
+        if noise:
+            x.add_noise()
         if norm:
             image = x.image / x.w_pix
         else:
@@ -216,7 +214,8 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
         print('-Adding {:} negatives...'.format(k))
         for i in range(0,k):
             x_noise = Cluster()
-            x_noise.add_noise()
+            if noise:
+                x_noise.add_noise()
             if norm:
                 image = x_noise.image / x_noise.w_pix
             else:
@@ -259,7 +258,7 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
     
     print('\nValidation image shape:', validation_data[0].shape)
     print('Validation labels shape:', validation_data[1].shape)
-    print('y_validation', y_validation)
+    print('y_validation', y_train[split_at:])
 
     modeldir = mkdir_model(spath=home+'/repos/ClusNet/models/category')
     

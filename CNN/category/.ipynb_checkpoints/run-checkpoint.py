@@ -62,10 +62,10 @@ def main():
 
     # compiler
     metrics = ["accuracy"]
-    opt=tf.keras.optimizers.Adam(lr=0.005)
+    opt=tf.keras.optimizers.Adam()
 
     # training 
-    epochs = 500
+    epochs = 100
     input_shape = (im_size,im_size,1) # width, height, channel number
     pool_size = (2,2)
     kernel_size = (3,3)
@@ -88,7 +88,7 @@ def main():
                   metrics=metrics)
     
     # load data
-    training_data, validation_data, modeldir = Cluster.load_dataset(k=k,validation_split=0.20)
+    training_data, validation_data, modeldir = Cluster.load_dataset(k=k,validation_split=0.20,noise=False)
     x_train, y_train = training_data
     validation_x, validation_y = validation_data
     
