@@ -1,0 +1,70 @@
+hVvNH
+50% of total clusters
+20% of 50% is validation set
+- cluster or not cluster?
+    - 0 no cluster
+    - 1 cluster
+- noise added
+- non-shifted
+- 50 epochs
+- performance: good
+- relu activation, sigmoid for last layer
+
+151e0
+same as above, but with no noise
+
+eu530
+same as above
+no noise
+epoch = 20
+notes: stalled completely
+
+
+----
+
+notes from meeting:
+
+troubleshooting:
+- stagnant loss problem
+    - use bigger learning rate
+    - learning rate initial
+    - behaivor likely to go away once we add AGN noise
+    
+- you can save a model before it has trained
+    - use saved successful model 
+    
+
+- add point sources as noise?
+    - option 1: reach out to eRosita Ezra, Johan?
+        - Johan runs sims
+        - Ezra cluster cosmology team
+    - option 2: go back to magnectium
+        - option to turn on AGN or not
+    - option 3:
+        - look up eRosita point spread function (PSF)
+            - produce artifical psf myself
+            - two free parameters: 1. how many photons 2. width of gaussian
+            - same number of photons as clusters for now
+    - option 4:
+        - michelle send email to some folk to ask about AGN modeling/noise adding
+        - will do tomorrow
+        
+        
+future plans    
+- do segmentation mapping according to my own interest (secondary priority)
+- keep in mind that if this project content is presented, should have a robust model with associated figures that convince board of results ("wow" figures)
+    - figure ideas
+        - residual plot (histogram)
+        - training data sample figure
+        - some figures that highlight difference in performance between high or low mass clusters
+- 
+
+- before end of semester:
+    - try to write slides while material is still fresh
+- for handling off project:
+    - provide model arch.
+    - data set (and associated code/documentation)
+    - comment code
+
+    
+
