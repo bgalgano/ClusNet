@@ -66,15 +66,15 @@ def main():
 
     # compiler
     metrics = ["accuracy"]
-    opt = tf.keras.optimizers.Adam(lr=1e-1)
+    opt = tf.keras.optimizers.Adam(lr=1e-4)
 
     # training 
-    epochs = 1000
+    epochs = 50
     input_shape = (im_size,im_size,1) # width, height, channel number
     pool_size = (2,2)
     kernel_size = (3,3)
     activation = 'relu'
-    strides = 2
+    stride = 2
     noise = True
 
     # GPU
