@@ -1,0 +1,21 @@
+- leaky vs non-leaky relus?
+    - if neuron has value above 0, stays with current value
+    - if neuron has value below 0, maps to 0
+   
+- should probably be saving training and validation images for each run 
+    as a numpy array
+- save one instance and just use that for now
+- can save numpy array in scratch folder
+- this is because we want to evaluate failures by looking at their noise (esp. when we add agns)
+
+# numpy array shape: (number of clusters, height, width, 1) ?
+
+troublesooting ROC curves:
+    - maybe current successful model is memorizing noise which is why it always precits a cluster present 
+    - maybe an indexing error
+    - maybe make multiple versions of the same cluster but with different noise
+    
+    
+- Segementation maps next time
+    - take input cluster, apply gaussian kernel, and then make every pixel above 0 equal 1
+    - 

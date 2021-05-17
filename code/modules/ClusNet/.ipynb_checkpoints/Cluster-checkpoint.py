@@ -14,6 +14,8 @@ from astropy.io import fits
 import random, string
 import time
 from os.path import expanduser
+import progressbar
+import h5py
 home = expanduser("~")
 repodir = home + '/repos/ClusNet/'
 clusterList = np.load(repodir + 'data/eROSITA_no_background/clusterList.npy')
@@ -184,35 +186,74 @@ class Cluster:
         plt.close()
         return None
     
-def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,validation_split=0.20,noise=True):
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 30, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+    
+def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,save=True,validation_split=0.20,noise=True):
+    
     clusglob = glob(globdir+'*.fits')
+    
+    multiplicity = 3
+    
+    # determine which clusters are chosen
     if type(k) == float and k < 1:
-        k = int(k*len(clusglob))    
+        k = int(k * len(clusglob))    
     if k == 'all':
         k = len(clusglob)
+        
+    # make a random choice
     clusfpaths = random.choices(clusglob,k=k)
     clusfpaths = np.array(clusfpaths)
 
     x_train = []
     y_train = []
+    TOTAL_CLUS_NUM = k + k*multiplicity
     print("Loading {:} clusters...".format(k))
+    print('{}/{} clusters being used.'.format(len(clusfpaths),len(clusglob)))
+    print('Multiplicity factor: {}'.format(multiplicity))
+    
     savepaths = []
-    for i, clusfpath in enumerate(clusfpaths):   
-        
+    POS_NUM = len(clusfpaths)*multiplicity
+    for i in range(len(clusfpaths)):  
+        clusfpath = clusfpaths[i]
+
         x = Cluster(fpath=clusfpath)
-        if noise:
-            x.add_noise()
-        if norm:
-            image = x.image / x.w_pix
-        else:
-            image = x.image
-        x_train.append(image)
-        y_train.append(1)
-        savepaths.append(clusfpath)
+        for j in range(multiplicity):
+            x_copy = x
+            if noise:
+                x_copy.add_noise()
+            if norm:
+                image = x_copy.image / x_copy.w_pix
+            else:
+                image = x_copy.image
+            x_train.append(image)
+            y_train.append(1.)
+            savepaths.append(clusfpath)
+        printProgressBar(total=POS_NUM,iteration=i*multiplicity)
         
     if addneg:
-        print('-Adding {:} negatives...'.format(k))
-        for i in range(0,k):
+        print('\n')
+        NEG_NUM = len(clusfpaths)*multiplicity
+        print('-Adding {:} negatives...'.format(NEG_NUM))
+        for i in range(0, NEG_NUM):
             x_noise = Cluster()
             if noise:
                 x_noise.add_noise()
@@ -221,8 +262,11 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
             else:
                 image = x_noise.image
             x_train.append(image)
-            y_train.append(0)
+            y_train.append(0.)
             savepaths.append('noise')
+            printProgressBar(total=NEG_NUM,iteration=i)
+            
+    print('')
 
     x_train = np.array(x_train)
     y_train = np.array(y_train)
@@ -230,7 +274,7 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
     
     im_size = x_train[0].shape[0] # 384
     
-    idx = np.array(list(range(k*2)))
+    idx = np.array(list(range(len(x_train))))
     random.shuffle(idx) 
     
     x_train = x_train[idx]
@@ -250,25 +294,39 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
     validation_data = (x_validation, y_validation)
     training_data = (x_train,y_train)
     
-                         # print out label shapes
+    # print out label shapes
     print("Done.")
     print('\nTraining image shape:', training_data[0].shape)
     print('Training labels shape:', training_data[1].shape)
-    print('y_train', y_train)
+    print('y_train [0s:{} 1s: {}]'.format(len(training_data[1]==0), len(training_data[1]==0)))
     
     print('\nValidation image shape:', validation_data[0].shape)
     print('Validation labels shape:', validation_data[1].shape)
-    print('y_validation', y_train[split_at:])
-
-    modeldir = mkdir_model(spath=home+'/repos/ClusNet/models/category')
+    print('y_validation [0s:{} 1s: {}]'.format(len(validation_data[1]==0), len(validation_data[1]==0)))
     
-    if savefpaths:
-        print("\nSaving dataset paths to-->",modeldir)
+    if save:
+        print('Saving training data')
+        modeldir = mkdir_model(spath=home+'/repos/ClusNet/models/category')
+        
         training_cluspaths = savepaths[:split_at]
         validation_clusfpaths = savepaths[split_at:]
         
+        x_train_save = x_train.reshape(x_train.shape[0], -1)
+        x_validation_save = x_validation.reshape(x_validation.shape[0], -1)
+
+        train_file = h5py.File(modeldir+"/train_data.h5", 'w')
+        train_file.create_dataset('x_train', data=x_train_save)
+        train_file.create_dataset('y_train', data=y_train)
+        train_file.close()
+        
+        val_file = h5py.File(modeldir+"/val_data.h5", 'w')
+        val_file.create_dataset('x_val', data=x_validation_save)
+        val_file.create_dataset('y_val', data=y_validation)
+        val_file.close()
+
         np.savetxt(fname=modeldir+"/tr_paths.txt",X=training_cluspaths,delimiter="\n",fmt="%s")
         np.savetxt(fname=modeldir+"/val_paths.txt",X=validation_clusfpaths,delimiter="\n",fmt="%s")
+        print("\nSaved dataset paths to -->",modeldir)
     return training_data, validation_data, modeldir
 
 def mkdir_model(spath=home+'/repos/ClusNet/models/category'):
@@ -337,3 +395,5 @@ def plot(spath="./",clusfpaths=None,globdir=None,size=5):
     plt.show()
     plt.close()
     print("\nDataset preview saved to:", fpath)
+    
+

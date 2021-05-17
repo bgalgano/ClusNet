@@ -35,11 +35,13 @@ def generate_model(kernel_size, pool_size, activation, strides, input_shape,im_s
     model.add(tf.keras.Input(shape=(im_size,im_size,1)))
 
     padding = 'same'
-    
+    activation = 'linear'
     # 1. 3×3 convolution with 16 filters
     model.add(tf.keras.layers.Conv2D(filters=16, kernel_size=kernel_size,
 activation=activation,padding=padding))
 
+    #model.add(tf.keras.layers.LeakyReLU(alpha=0.3))
+              
     # 2. 2×2, stride-2 max pooling
     model.add(tf.keras.layers.MaxPooling2D(pool_size=pool_size, strides=strides))
 
