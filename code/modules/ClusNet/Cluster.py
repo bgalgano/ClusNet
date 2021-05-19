@@ -90,7 +90,7 @@ class Cluster:
         shift cluster randomly within bounds of image
         """
         
-        low = -1*delta
+        low = -1 * delta
         high = delta
         
         r = self.Rpixel
