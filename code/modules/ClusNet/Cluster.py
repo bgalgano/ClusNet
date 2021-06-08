@@ -14,12 +14,26 @@ from astropy.io import fits
 import random, string
 import time
 from os.path import expanduser
+<<<<<<< HEAD
+=======
+import progressbar
+import h5py
+from copy import copy
+import tensorflow as tf
+from scipy import ndimage
+from scipy.ndimage import gaussian_filter
+
+>>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
 home = expanduser("~")
 repodir = home + '/repos/ClusNet/'
 clusterList = np.load(repodir + 'data/eROSITA_no_background/clusterList.npy')
 clusterDir = repodir + 'data/eROSITA_no_background/'
 GLOBDIR = clusterDir
 
+sys.path.append(home+'/repos/ClusNet/code/modules/')
+
+from ClusNet import dataset as ds
+from ClusNet import model as m
 
 class Cluster:
     def __init__(self, fpath=None):
@@ -30,6 +44,7 @@ class Cluster:
         if fpath is None:
             self.id = 'noise'
             self.image = np.zeros(shape=(384,384))
+            self.cluster = np.zeros(shape=(384,384))
             self.meta = None
             self.meta_col = None
             
@@ -37,31 +52,40 @@ class Cluster:
             self.R500 = None
             self.Rpixel = None
             self.Tkev = None
+            self.cat = 0
                         
         else:
             self.id = Path(fpath).stem
         
             with fits.open(fpath) as data:
                 cluster_df = pd.DataFrame(data[0].data)
-            self.image = cluster_df.to_numpy()
-        
+            
+            self.cluster = cluster_df.to_numpy()           
+            
             meta = clusterList[clusterList['id']==int(self.id)]
             self.meta = meta
-
             self.M500 = np.log10(meta['M500_msolh'])[0]
             self.R500 = np.log10(meta['r500_kpch'])[0]
             self.Rpixel = meta['R500_pixel'][0]
             self.Tkev = np.log10(meta['T_kev'])[0]
+            self.cat = 1
             
             if type(self.meta) == np.ndarray:
                 self.meta_col = meta.dtype.names
             else:
                 self.meta_col = meta.columns()
-            
+                
+        self.poisson = np.zeros(shape=(384,384))
+        self.agn = np.zeros(shape=(384,384))
+        self.image = self.poisson + self.agn + self.cluster
+        
         self.w_pix  = len(self.image[:,0])
         self.xmid = int(self.w_pix/2)
         self.ymid = int(self.w_pix/2)
         self.mid_pix = (self.xmid,self.ymid)
+        
+     
+
         
     def __repr__(self):
         """
@@ -76,14 +100,32 @@ class Cluster:
         self.meta = pd.DataFrame(self.meta)
         return
     
-    def add_noise(self):
+    def add_poisson(self):
         """
         add Poisson noise to cluster image matrix
         """
-        self.noise = np.random.poisson(lam=self.lam, size=self.image.shape)
-        self.image += self.noise
-
-        return
+        # generate a poisson distribution
+        # 2D distribution in pixel size of image
+        poisson_noise = np.random.poisson(lam=self.lam, size=self.image.shape)
+        
+        # image of just poisson noise
+        self.poisson = poisson_noise
+        self.image += self.poisson
+        
+    def add_agn(self,num=3):
+        """
+        add agn noise to cluster image matrix
+        """
+        agns = []
+        for i in range(num):
+            std = np.random.uniform(1.,2.,size=None)
+            agn_ = ds.Profile(std=std,im_size=(384,384))  
+            agn_.shift()
+            agns.append(agn_.image)
+        agns = np.array(agns).T
+        self.agn = agns
+        self.image += np.sum(self.agn,axis=-1)
+        return agns
         
     def shift(self,delta=64):
         """
@@ -103,8 +145,18 @@ class Cluster:
         xi = xmid + x_shift
         yi = ymid + y_shift
 
-        cluster_y_shift = np.roll(self.image,shift=y_shift,axis=0)
-        self.image = np.roll(cluster_y_shift,shift=x_shift,axis=1)
+
+        image_y_shift = np.roll(self.image,shift=y_shift,axis=0)
+        self.image = np.roll(image_y_shift,shift=x_shift,axis=1)
+        
+        cluster_y_shift = np.roll(self.cluster,shift=y_shift,axis=0)
+        self.cluster = np.roll(cluster_y_shift,shift=x_shift,axis=1)
+        
+        agn_y_shift = np.roll(self.agn,shift=y_shift,axis=0)
+        self.agn = np.roll(agn_y_shift,shift=x_shift,axis=1)
+        
+        noise_y_shift = np.roll(self.poisson,shift=y_shift,axis=0)
+        self.poisson = np.roll(noise_y_shift,shift=x_shift,axis=1)
         
         self.xmid = self.xmid + x_shift
         self.ymid = self.ymid + y_shift
@@ -127,7 +179,7 @@ class Cluster:
         self.mix_pix = (self.xmid,self.ymid)
         return
     
-    def plot(self,circle=True,square=True,savefig=False,spath='../figs/eROSITA/'):
+    def plot(self,circle=True,square=False,savefig=False,spath='../figs/eROSITA/'):
         """
         plot cluster image with radius and mass information
         """
@@ -137,10 +189,16 @@ class Cluster:
         Rpixel = self.Rpixel
         cluster = self.image
         cluster_id = self.id
-        
+
         plt.figure(figsize=(4,4))        
-        cmap = mpl.cm.rainbow
-        im = plt.imshow(np.log10(cluster),cmap=cmap,interpolation='none')
+        cmap = plt.cm.rainbow
+        cmap.set_under(color="white",alpha=0)
+
+        agn_cmap = plt.cm.viridis
+        agn_cmap.set_under(color="white",alpha=0)
+
+        im = plt.imshow(np.log10(self.image),cmap=cmap,interpolation='none')
+        #im = plt.imshow(np.log10(agn),cmap=agn_cmap,interpolation='none')
 
         ax = plt.gca()
         
@@ -169,9 +227,7 @@ class Cluster:
         ax.set_yticks(np.arange(0,w_pix,100))
 
         ax.set_xlabel("x"), ax.set_ylabel("y")
-        ax.set_facecolor('#DADADA')
-        print(self.mid_pix)
-
+        ax.set_facecolor('white')
         
         plt.tight_layout()
 
@@ -184,14 +240,105 @@ class Cluster:
         plt.close()
         return None
     
+<<<<<<< HEAD
 def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,validation_split=0.20,noise=True):
     clusglob = glob(globdir+'*.fits')
+=======
+    def get_mask(self,sigma=1.,kernel='gauss'):
+                
+        cluster_filter = gaussian_filter(self.cluster, sigma=sigma, mode='constant',cval=0.0)
+        cluster_mask = (cluster_filter > 0.) * 1
+
+        agn_all = np.sum(self.agn,axis=-1)
+        agns_filter = gaussian_filter(agn_all, sigma=sigma, mode='constant',cval=0.0)
+        agns_mask = (agns_filter > 0.) * 2
+
+        catnum_map = cluster_mask + agns_mask
+     
+        return catnum_map
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 30, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+        
+def read_cluster(clusfpath,shift=False,agn=True,poisson=True,sigma=2):
+    x = Cluster(fpath=clusfpath)
+
+    if shift:
+        x.shift()
+        
+    if agn:
+        num = np.random.randint(low=1,high=4,size=None)
+        agns = x.add_agn(num=num)
+
+    if poisson:
+        x.add_poisson()
+        
+    image = x.image
+    
+    mask = x.get_mask(sigma=sigma)
+    
+    return image, mask
+
+        
+def load_keras_dataset(clusfpaths,shift=False,add_neg=True,noise=True):
+    clusfpaths = get_fpaths(k=k,globdir=GLOBDIR)
+            
+    masks = []
+    images = []
+    labels=[]
+    for i in range(len(clusfpaths)): 
+        printProgressBar(total=len(clusfpaths),iteration=i)
+        image, mask, label = read_cluster(clusfpath=clusfpaths[i],shift=shift,noise=noise)
+        images.append(image)
+        masks.append(mask)
+        labels.append(label)
+        
+        if add_neg:
+            neg_image, neg_mask, neg_label = read_cluster(clusfpath=None,shift=shift,noise=noise)
+            images.append(image)
+            masks.append(mask)
+            labels.append(label)
+            
+    dataset = tf.data.Dataset.from_tensor_slices({"image": images, "segmentation mask": masks,"label":labels})
+    print("dataset created:", dataset)
+    
+    return dataset
+
+
+def get_fpaths(k='all',globdir=GLOBDIR):
+        
+    clusglob = glob(globdir+'*.fits')
+    
+    # determine which clusters are chosen
+>>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
     if type(k) == float and k < 1:
         k = int(k*len(clusglob))    
     if k == 'all':
         k = len(clusglob)
     clusfpaths = random.choices(clusglob,k=k)
     clusfpaths = np.array(clusfpaths)
+    
+    return clusfpaths
+    
+def load_dataset(mode='cat',k='all', globdir=GLOBDIR,norm=True,shift=True,addneg=True,save=True,validation_split=0.20,noise=True):
+    clusfpaths = get_fpaths(k='all',globdir=GLOBDIR)
 
     x_train = []
     y_train = []
@@ -200,6 +347,7 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
     for i, clusfpath in enumerate(clusfpaths):   
         
         x = Cluster(fpath=clusfpath)
+<<<<<<< HEAD
         if noise:
             x.add_noise()
         if norm:
@@ -209,6 +357,25 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
         x_train.append(image)
         y_train.append(1)
         savepaths.append(clusfpath)
+=======
+        x_copy = x
+        
+        if shift:
+            x_copy.shift()
+        if norm:
+            image = x_copy.image / x_copy.w_pix
+        for j in range(multiplicity):
+            if noise:
+                x_copy.add_noise()
+            else:
+                image = x_copy.image
+            x_train.append(image)
+            
+            if mode == 'cat':
+                y_train.append(1.)
+            savepaths.append(clusfpath)
+        printProgressBar(total=POS_NUM,iteration=i*multiplicity)
+>>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
         
     if addneg:
         print('-Adding {:} negatives...'.format(k))
@@ -221,7 +388,13 @@ def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,
             else:
                 image = x_noise.image
             x_train.append(image)
+<<<<<<< HEAD
             y_train.append(0)
+=======
+            
+            if mode == 'cat':
+                y_train.append(0.)
+>>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
             savepaths.append('noise')
 
     x_train = np.array(x_train)
@@ -298,12 +471,11 @@ def plot(spath="./",clusfpaths=None,globdir=None,size=5):
     for clusfpath in clusfpaths:
         
         pos = Cluster(fpath=clusfpath)
-        pos.add_noise()
+  
         dataset.append(pos)
         labels.append(1)
         
         neg = Cluster()
-        neg.add_noise()
         dataset.append(neg)
         labels.append(0)
         

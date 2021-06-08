@@ -37,16 +37,22 @@ import glob as glob
 
 class Profile:
     def __init__(self,std,im_size):
-        self.mid_pixel = int(im_size/2) # 128/2
+        self.mid_pixel = int(im_size[0]/2) # 128/2
         self.x, self.y = self.mid_pixel, self.mid_pixel
         self.im_size = im_size
+        self.size = im_size[0]
         self.std = std
         self.noise = False
         self.lam = 0.1133929878
         
-        gkern1d = signal.gaussian(self.im_size, std=std).reshape(self.im_size, 1)
-        self.im = np.outer(gkern1d, gkern1d)
+        gkern1d = signal.gaussian(self.im_size[0], std=std).reshape(self.im_size[0], 1)
+        self.image = np.outer(gkern1d, gkern1d)
         
+        mask = self.image < 1e-4  # Where values are low
+        self.image[mask] = 0 
+
+        size = im_size[0]
+
         self.im_lrud  = None
         self.im_lr = None
         self.im_ud = None
@@ -55,7 +61,7 @@ class Profile:
         """
         print cluster metadata
         """
-        return str(self.im)
+        return str(self.image)
     
     def to_pandas(self):
         """
@@ -68,8 +74,8 @@ class Profile:
         """
         add Poisson noise to cluster im matrix
         """
-        self.noise = np.random.poisson(lam=self.lam, size=self.im.shape)
-        self.im += self.noise
+        self.noise = np.random.poisson(lam=self.lam, size=self.image.shape)
+        self.image += self.noise
         return
         
     def shift(self):
@@ -80,18 +86,17 @@ class Profile:
         shift cluster randomly within bounds of im
         """
         r = self.std
-        mid = self.mid_pixel #center pixel index of 384x384 image
-        delta = self.im_size - self.mid_pixel - r - 10
+        delta = int(self.size/2) - 50
         
-        x = np.random.randint(low=-1*delta,high=delta,size=1)[0]
-        y = np.random.randint(low=-1*delta,high=delta,size=1)[0]
+        x = np.random.randint(low=-1*delta,high=delta,size=None)
+        y = np.random.randint(low=-1*delta,high=delta,size=None)
 
         self.x += x
         self.y += y
-        im_shift = np.roll(self.im,shift=y,axis=0)
-        self.im = np.roll(im_shift,shift=x,axis=1)
+        im_shift = np.roll(self.image,shift=y,axis=0)
+        self.image = np.roll(im_shift,shift=x,axis=1)
         
-        return 
+        return (self.x,self.y)
     
     def plot(self,spath='../figs/profile/'):
         """
@@ -99,7 +104,7 @@ class Profile:
         """
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        im = ax.imshow(self.im,interpolation='none',cmap='viridis')
+        im = ax.imshow(self.image,interpolation='none',cmap='viridis')
         
         ticks = np.arange(0,self.size,50)
         plt.xticks(ticks),plt.yticks(ticks)
@@ -109,7 +114,7 @@ class Profile:
         cax = divider.append_axes("right", size="5%", pad=0.12)
 
         plt.colorbar(im, cax=cax)
-        # plt.show()
+        plt.show()
         plt.close()
         
         return None
@@ -118,13 +123,13 @@ class Profile:
         im_c = np.zeros((self.im_size,self.im_size))
         im_c[self.x,self.y] = 1
         
-        im_lr = np.fliplr(self.im)
+        im_lr = np.fliplr(self.image)
         im_c_lr = np.flipud(im_c)
         
         self.im_lr = im_lr
         self.x_lr, self.y_lr = [val[0] for val in np.nonzero(im_c_lr)]
         
-        self.im = im_lr
+        self.image = im_lr
         self.x, self.y = self.x_lr, self.y_lr
         return None
 
@@ -132,13 +137,13 @@ class Profile:
         im_c = np.zeros((self.im_size,self.im_size))
         im_c[self.x,self.y] = 1
 
-        im_ud = np.flipud(self.im)
+        im_ud = np.flipud(self.image)
         im_c_ud = np.fliplr(im_c)
         
         self.im_ud = im_ud
         self.x_ud, self.y_ud = [val[0] for val in np.nonzero(im_c_ud)]
         
-        self.im = im_ud
+        self.image = im_ud
         self.x, self.y = self.x_ud, self.y_ud
         return None
     
@@ -146,13 +151,13 @@ class Profile:
         im_c = np.zeros((self.im_size,self.im_size))
         im_c[self.x,self.y] = 1
         
-        im_lrud = np.fliplr(np.flipud(self.im))
+        im_lrud = np.fliplr(np.flipud(self.image))
         im_c_lrud = np.flipud(np.fliplr(im_c))
         
         self.im_lrud = im_lrud
         self.x_lrud, self.y_lrud = [val[0] for val in np.nonzero(im_c_lrud)]
         
-        self.im = im_lrud
+        self.image = im_lrud
         self.x, self.y = self.x_lrud, self.y_lrud
         return None
     
@@ -193,10 +198,6 @@ def load_dataset(dataset,norm=True):
     size = len(dataset)
     data = np.array([prof.im for prof in dataset])
     labels = np.array([(prof.x,prof.y,prof.std[0]) for prof in dataset])
-
-    idx = np.arange(0,size,1)
-    #train_idx = np.delete(idx, test_idx)
-    train_idx = idx
     
     im_size = dataset[0].im.shape[0]
     if norm:
@@ -205,7 +206,11 @@ def load_dataset(dataset,norm=True):
         norm_factor = 1
     
     data = data/norm_factor
-    x_train, y_train = data[train_idx], labels[train_idx]
+    
+    idx = np.arange(0,size,1)
+    idx = np.random.shuffle(idx) 
+    
+    x_train, y_train = data[idx], labels[idx]
     x_train = x_train.reshape(-1, im_size, im_size, 1)
     print("\nDataset loaded.")
     print("Image input shape:", x_train.shape)
@@ -230,57 +235,3 @@ def plot_metrics(history,spath,model_id):
 bbox_inches='tight')
     #plt.show()
     print('\n---> metrics plot saved to',spath)
-
-def main():
-    epochs = 10
-    model_dir = '../models/Zs5qQ'
-    model_id = 'Zs5qQ'
-    new_model = keras.models.load_model(model_dir)
-    
-    cwd = os.getcwd()
-    spath = cwd + '../models'
-    
-    # create gaussian dataset
-    im_size = 128
-    set_size = 100
-    dataset = create_set(im_size=im_size,set_size=set_size)
-    
-    # model fitting
-    validation_split = 0.2
-    x_train, y_train = load_dataset(dataset)
-    batch_size = len(dataset)
-    
-    split_at = int(x_train.shape[0] * (1-validation_split))
-    validation_x = x_train[split_at:]
-    validation_y = y_train[split_at:]
-    validation_data=(validation_x, validation_y)
-    print("\n***LEARNING START***")
-    start = time.time()
-    history = new_model.fit(x=x_train[:split_at],
-                        y=y_train[:split_at], 
-                        epochs=epochs, 
-                        batch_size=batch_size,
-                        validation_data=(validation_x, validation_y),
-                        verbose=2)
-    print("***LEARNING END***")
-    elapsed = time.time() - start
-    print("\nTIME:",str(timedelta(seconds=elapsed)))
-
-    # plot loss and accuracy
-    plot_metrics(history=history,spath=model_dir,model_id=model_id)
-
-    # predict labels from model
-    print("\nPredicting training labels:")
-    y_train_model = new_model.predict(x_train,verbose=1)    
-
-    # plot 1-to-1
-    validation_y_model = new_model.predict(validation_x,verbose=1)
-    plot_1tot1(y_train=y_train,
-               y_train_model=y_train_model,
-               validation_y=validation_y,
-               validation_y_model=validation_y_model,
-               spath=model_dir,
-               model_id=model_id)
-
-if __name__ == "__main__":
-    main()

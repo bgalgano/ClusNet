@@ -1,0 +1,31 @@
+Notes:
+
+michelle advance:
+# statistics / image processing for humantarian 
+# Summer internships for data science pretty common
+# 
+
+troubleshooting:
+    memory issues:
+        reach out to john about memory issues
+        maybe may have to go to help desk,
+
+        numpy array makes a new copy when you give it to a function
+
+        consider using smaller batches
+        consider not augmenting data quite as much
+
+        image generator
+        
+    1.0s issue:
+        take same training dataset, load model, and apply model to training set and compare
+        then test on validation data
+        
+        if it fails on training set, then it is a bookkeeping issue
+        
+   UNET segmentation
+       ask John for help with Unet and how he's preparing data
+   
+unpleasant task day
+    - unsurprised 
+    - 

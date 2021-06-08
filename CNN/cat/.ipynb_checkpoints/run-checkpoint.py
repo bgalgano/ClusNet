@@ -44,12 +44,7 @@ from keras import backend as K
 
 # plot
 
-label_size = 14
-mpl.rcParams['legend.fontsize'] = label_size
-mpl.rcParams['axes.labelsize'] = label_size
-mpl.rcParams['axes.labelpad'] = 10
-mpl.rcParams['xtick.labelsize'] = label_size
-mpl.rcParams['ytick.labelsize'] = label_size
+
 
 # print
 np.set_printoptions(precision=3, suppress=True)
