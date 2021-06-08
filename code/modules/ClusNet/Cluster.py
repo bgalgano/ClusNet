@@ -14,8 +14,6 @@ from astropy.io import fits
 import random, string
 import time
 from os.path import expanduser
-<<<<<<< HEAD
-=======
 import progressbar
 import h5py
 from copy import copy
@@ -23,7 +21,6 @@ import tensorflow as tf
 from scipy import ndimage
 from scipy.ndimage import gaussian_filter
 
->>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
 home = expanduser("~")
 repodir = home + '/repos/ClusNet/'
 clusterList = np.load(repodir + 'data/eROSITA_no_background/clusterList.npy')
@@ -240,10 +237,9 @@ class Cluster:
         plt.close()
         return None
     
-<<<<<<< HEAD
 def load_dataset(k='all', globdir=GLOBDIR,norm=True,addneg=True,savefpaths=True,validation_split=0.20,noise=True):
     clusglob = glob(globdir+'*.fits')
-=======
+
     def get_mask(self,sigma=1.,kernel='gauss'):
                 
         cluster_filter = gaussian_filter(self.cluster, sigma=sigma, mode='constant',cval=0.0)
@@ -327,7 +323,6 @@ def get_fpaths(k='all',globdir=GLOBDIR):
     clusglob = glob(globdir+'*.fits')
     
     # determine which clusters are chosen
->>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
     if type(k) == float and k < 1:
         k = int(k*len(clusglob))    
     if k == 'all':
@@ -347,7 +342,6 @@ def load_dataset(mode='cat',k='all', globdir=GLOBDIR,norm=True,shift=True,addneg
     for i, clusfpath in enumerate(clusfpaths):   
         
         x = Cluster(fpath=clusfpath)
-<<<<<<< HEAD
         if noise:
             x.add_noise()
         if norm:
@@ -357,7 +351,6 @@ def load_dataset(mode='cat',k='all', globdir=GLOBDIR,norm=True,shift=True,addneg
         x_train.append(image)
         y_train.append(1)
         savepaths.append(clusfpath)
-=======
         x_copy = x
         
         if shift:
@@ -375,7 +368,6 @@ def load_dataset(mode='cat',k='all', globdir=GLOBDIR,norm=True,shift=True,addneg
                 y_train.append(1.)
             savepaths.append(clusfpath)
         printProgressBar(total=POS_NUM,iteration=i*multiplicity)
->>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
         
     if addneg:
         print('-Adding {:} negatives...'.format(k))
@@ -388,13 +380,10 @@ def load_dataset(mode='cat',k='all', globdir=GLOBDIR,norm=True,shift=True,addneg
             else:
                 image = x_noise.image
             x_train.append(image)
-<<<<<<< HEAD
-            y_train.append(0)
-=======
-            
+
+            y_train.append(0)            
             if mode == 'cat':
                 y_train.append(0.)
->>>>>>> a14ae80b9a7b1e2f6a938b072e63d7cd7bdefb34
             savepaths.append('noise')
 
     x_train = np.array(x_train)
