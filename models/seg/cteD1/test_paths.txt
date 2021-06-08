@@ -1,0 +1,10 @@
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/921457.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/871524.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/921472.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/912462.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/921620.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/911948.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/901606.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/921411.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/881986.fits
+/Users/erebor/repos/ClusNet/data/eROSITA_no_background/921540.fits

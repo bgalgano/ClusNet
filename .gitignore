@@ -1,3 +1,6 @@
+models/seg/cteD1/train_data.h5
+models/seg/8mVlJ/train_data.h5
+models/seg/8mVlJ/val_data.h5
 models/seg/6TLKm/train_data.h5
 models/seg/6TLKm/val_data.h5
 models/seg/CKfMx/train_data.h5

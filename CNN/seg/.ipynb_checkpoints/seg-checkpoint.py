@@ -49,7 +49,7 @@ clusterList = np.load(repodir + 'data/eROSITA_no_background/clusterList.npy')
 clusterDir = repodir + 'data/eROSITA_no_background/'
 GLOBDIR = clusterDir
 
-def make_dataset(paths,validation_split,modeldir):
+def make_dataset(paths,validation_split,modeldir,shift,agn,poisson,sigma):
     data_length = len(paths)
     
     image_list = []
@@ -58,7 +58,7 @@ def make_dataset(paths,validation_split,modeldir):
     for i, clusfpath in enumerate(paths):
 
         Cluster.printProgressBar(total=len(paths),iteration=i)
-        image, mask = Cluster.read_cluster(clusfpath,shift=False,agn=True,poisson=False,sigma=0.5)
+        image, mask = Cluster.read_cluster(clusfpath,shift=shift,agn=agn,poisson=poisson,sigma=sigma)
 
         image_tensor = tf.constant(image)
 
@@ -87,7 +87,7 @@ def make_dataset(paths,validation_split,modeldir):
     
     x_train_save = x_train.reshape(x_train.shape[0], -1)
     x_test_save = x_test.reshape(x_test.shape[0], -1)
-
+    """
     train_file = h5py.File(modeldir+"/train_data.h5", 'w')
     train_file.create_dataset('x_train', data=x_train_save)
     train_file.create_dataset('y_train', data=y_train)
@@ -101,7 +101,7 @@ def make_dataset(paths,validation_split,modeldir):
     np.savetxt(fname=modeldir+"/train_paths.txt",X=paths_train,delimiter="\n",fmt="%s")
     np.savetxt(fname=modeldir+"/test_paths.txt",X=paths_test,delimiter="\n",fmt="%s")
     print("\nSaved dataset paths to -->",modeldir)
-    
+    """
     print("\nx_train shape:",x_train.shape)
     print("y_train shape:",y_train.shape)
     
@@ -110,38 +110,38 @@ def make_dataset(paths,validation_split,modeldir):
 
     return x_train,y_train,paths_train,x_test,y_test,paths_test
     
-def get_x(output_shape):
+def get_x(output_shape,activation='softmax'):
     concat = tf.keras.layers.Concatenate()
 
     x0 = keras.Input(shape=output_shape)
 
     elayer1 = keras.Sequential()
-    elayer1.add(layers.Conv2D(64, kernel_size=(3, 3), activation="relu", padding='same'))
+    elayer1.add(layers.Conv2D(64, kernel_size=(3, 3), activation=activation, padding='same'))
     elayer1.add(layers.MaxPooling2D((2, 2)))
 
     x1 = elayer1(x0)
 
 
     elayer2 = keras.Sequential()
-    elayer2.add(layers.Conv2D(32, kernel_size=(3, 3), activation="relu", padding='same'))
+    elayer2.add(layers.Conv2D(32, kernel_size=(3, 3), activation=activation, padding='same'))
     elayer2.add(layers.MaxPooling2D((2, 2)))
 
     x2 = elayer2(x1)
 
     elayer3 = keras.Sequential()
-    elayer3.add(layers.Conv2D(16, kernel_size=(3, 3), activation="relu", padding='same'))
+    elayer3.add(layers.Conv2D(16, kernel_size=(3, 3), activation=activation, padding='same'))
     elayer3.add(layers.MaxPooling2D((2, 2)))
 
     x3 = elayer3(x2)
 
     elayer4 = keras.Sequential()
-    elayer4.add(layers.Conv2D(8, kernel_size=(3, 3), activation="relu", padding='same'))
+    elayer4.add(layers.Conv2D(8, kernel_size=(3, 3), activation=activation, padding='same'))
     elayer4.add(layers.MaxPooling2D((2, 2)))
 
     x4 = elayer4(x3)
 
     dlayer1 = keras.Sequential()
-    dlayer1.add(layers.Conv2DTranspose(8, kernel_size=(3, 3), activation="relu", padding='same'))
+    dlayer1.add(layers.Conv2DTranspose(8, kernel_size=(3, 3), activation=activation, padding='same'))
     dlayer1.add(layers.UpSampling2D((2, 2)))
 
     x5 = dlayer1(x4)
@@ -149,7 +149,7 @@ def get_x(output_shape):
     x6 = concat([x5,x3])
 
     dlayer2 = keras.Sequential()
-    dlayer2.add(layers.Conv2DTranspose(16, kernel_size=(3, 3), activation="relu", padding='same'))
+    dlayer2.add(layers.Conv2DTranspose(16, kernel_size=(3, 3), activation=activation, padding='same'))
     dlayer2.add(layers.UpSampling2D((2, 2)))
 
     x7 = dlayer2(x6)
@@ -157,7 +157,7 @@ def get_x(output_shape):
     x8 = concat([x7, x2])
 
     dlayer3 = keras.Sequential()
-    dlayer3.add(layers.Conv2DTranspose(32, kernel_size=(3, 3), activation="relu", padding='same'))
+    dlayer3.add(layers.Conv2DTranspose(32, kernel_size=(3, 3), activation=activation, padding='same'))
     dlayer3.add(layers.UpSampling2D((2, 2)))
 
     x9 = dlayer3(x8)
@@ -165,14 +165,14 @@ def get_x(output_shape):
     x10 = concat([x9, x1])
 
     dlayer4 = keras.Sequential()
-    dlayer4.add(layers.Conv2DTranspose(64, kernel_size=(3, 3), activation="relu", padding='same'))
+    dlayer4.add(layers.Conv2DTranspose(64, kernel_size=(3, 3), activation=activation, padding='same'))
     dlayer4.add(layers.UpSampling2D((2, 2)))
 
     x11 = dlayer4(x10)
 
     x12 = concat([x11, x0])
 
-    x13 = layers.Conv2DTranspose(1, kernel_size=(3, 3), activation="relu", padding='same')(x12)
+    x13 = layers.Conv2DTranspose(1, kernel_size=(3, 3), activation=activation, padding='same')(x12)
 
     return x0, x13
 
@@ -247,31 +247,79 @@ def plot_results(x_test,y_test,prediction,seg_cmap=mpl.cm.viridis,spath=None):
         #plt.show()
         plt.close()
         
+def custom_loss(y_true, y_pred):
+    labels = tf.cast(y_true,np.float32)
+    logits = tf.cast(y_pred,np.float32)
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels,
+                                                   logits=logits)
+    return loss
+        
 def p_GPU_stat():
     print("\n"+"*"*20)
     print("\nNum GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
     print("Num CPUs Available: ", len(tf.config.list_physical_devices('CPU')))
     print("*"*20 + "\n")
+    
+def plot_metrics(history,spath,model_id,metrics):
+    N = len(metrics)
+    cmap = mpl.cm.get_cmap('rainbow', N)    # PiYG
+
+    colors = []
+    for i in range(cmap.N):
+        rgba = cmap(i)
+        colors.append(mpl.colors.rgb2hex(rgba))
+    fig, ax = plt.subplots(ncols=1,nrows=2,figsize=(6,5),sharex=True)
+    for metric, color in zip(metrics,colors):
+        ax[0].plot(history.history[metric],color=color,label=metric)
+        ax[1].plot(history.history['val_' + metric],color=color)
+
+
+    ax[0].annotate('training set', xy=(1, 1), xycoords='axes fraction', fontsize=10,
+            horizontalalignment='right', verticalalignment='bottom')
+    ax[1].annotate('validation set', xy=(1, 1), xycoords='axes fraction', fontsize=10,
+            horizontalalignment='right', verticalalignment='bottom')
+    plt.xlabel('Epoch')
+    plt.subplots_adjust(hspace=0)
+    ax[0].legend(bbox_to_anchor=(0,1.02,1,0.2), loc="lower left",
+                mode="expand", borderaxespad=0, ncol=3)
+    figpath = spath + '/accuracy_loss_{}.png'.format(model_id)
+    plt.savefig(figpath,dpi=200,bbox_inches='tight')
+    #plt.show()
+    print('\n---> metrics plot saved to:',figpath)
 
         
 def main():
     
     p_GPU_stat()
-    os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
-    
-    epochs = 2
+    sigma = 0.5
+    poisson=False
+    agn=True
+    shift=False
+    epochs = 10
     batch_size = 16
+    k = 100
     validation_split = 0.1
-    k=0.1
     
-    modeldir = Cluster.mkdir_model(spath=home+'/repos/ClusNet/models/seg')
+    learning_rate = 1e-8
+    optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
+    crab= False
+    if crab:
+        modeldir = Cluster.mkdir_model(spath=home+'scratch/seg')
+    else: 
+        modeldir = Cluster.mkdir_model(spath=home+'/repos/ClusNet/models/seg')
+        os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
+        
     model_id = os.path.basename(os.path.normpath(modeldir))
     
     paths = Cluster.get_fpaths(k=k,globdir=GLOBDIR)
 
     x_train,y_train,paths_train,x_test,y_test,paths_test = make_dataset(paths=paths,
                                                                         validation_split=0.90,
-                                                                        modeldir=modeldir)
+                                                                        modeldir=modeldir,
+                                                                        shift=shift,
+                                                                        agn=agn,
+                                                                        poisson=poisson,
+                                                                        sigma=sigma)
     
     csv_logger = CSVLogger(modeldir + '/history_{}.log'.format(model_id),
                            separator=',',
@@ -283,11 +331,9 @@ def main():
     input_shape = (image_size, image_size, 1)
 
     # compile settings
-    learning_rate = 0.0005
-    optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
     loss = tf.keras.losses.MeanSquaredError()
-    #metrics = [tf.keras.metrics.MeanSquaredError(),tf.keras.metrics.Accuracy()]
-    metrics = [tf.keras.metrics.Accuracy()]
+    metrics = [tf.keras.metrics.MeanSquaredError(),tf.keras.metrics.Accuracy()]
+    #metrics = [tf.keras.metrics.Accuracy()]
  
     x0, x13 = get_x(output_shape=output_shape)
     the_U = keras.Model(x0, x13)
@@ -302,7 +348,7 @@ def main():
                         y=y_train, 
                         batch_size=batch_size, 
                         epochs=epochs, 
-                        verbose=2, 
+                        verbose=1, 
                         validation_split=validation_split,
                         callbacks=[csv_logger])
 
@@ -315,9 +361,11 @@ def main():
     the_U.save(modeldir)
     
     # plot loss and accuracy
-    m.plot_metrics(history=history,
+    metrics = ['accuracy','loss','mean_squared_error']
+    plot_metrics(history=history,
                  spath=modeldir,
-                 model_id=model_id)
+                 model_id=model_id,
+                metrics=metrics)
     
     prediction = the_U(x_test, training=False)
     plot_results(x_test=x_test,
