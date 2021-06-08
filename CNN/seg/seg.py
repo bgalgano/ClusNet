@@ -27,7 +27,7 @@ from scipy.ndimage import gaussian_filter
 from ClusNet import Cluster
 from ClusNet import model as m
 from ClusNet import dataset as ds
-
+import matplotlib as mpl
 import gc
 from keras import backend as K 
 
@@ -57,7 +57,7 @@ def make_dataset(paths,validation_split,modeldir):
     for i, clusfpath in enumerate(paths):
 
         Cluster.printProgressBar(total=len(paths),iteration=i)
-        image, mask = Cluster.read_cluster(clusfpath,shift=False,agn=True,poisson=False,sigma=0.5)
+        image, mask = Cluster.read_cluster(clusfpath,shift=False,agn=True,poisson=True,sigma=0.5)
 
         image_tensor = tf.constant(image)
 
@@ -200,8 +200,8 @@ def plot_results(x_test,y_test,prediction,seg_cmap=mpl.cm.viridis,spath=None):
 
     idx = np.arange(len(prediction))
 
-    for i in random.choices(idx,k=10):
-        predict_image = prediction[i].numpy()
+    for i in random.choices(idx,k=50):
+        predict_image = prediction[i]
         x_test_image = x_test[i]
         y_test_image = y_test[i]
 
@@ -254,14 +254,15 @@ def p_GPU_stat():
 
         
 def main():
+    mpl.use('pdf')
     
     p_GPU_stat()
     os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
     
-    epochs = 2
+    epochs = 50
     batch_size = 16
     validation_split = 0.1
-    k=0.1
+    k=1000
     
     modeldir = Cluster.mkdir_model(spath=home+'/repos/ClusNet/models/seg')
     model_id = os.path.basename(os.path.normpath(modeldir))
@@ -282,9 +283,11 @@ def main():
     input_shape = (image_size, image_size, 1)
 
     # compile settings
-    learning_rate = 0.0005
+    learning_rate = 1e-3
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
-    loss = tf.keras.losses.MeanSquaredError()
+         
+     #loss = tf.keras.losses.MeanSquaredError()
+    loss = tf.keras.losses.SparseCategoricalCrossentropy()
     #metrics = [tf.keras.metrics.MeanSquaredError(),tf.keras.metrics.Accuracy()]
     metrics = [tf.keras.metrics.Accuracy()]
  
@@ -301,7 +304,7 @@ def main():
                         y=y_train, 
                         batch_size=batch_size, 
                         epochs=epochs, 
-                        verbose=2, 
+                        verbose=1, 
                         validation_split=validation_split,
                         callbacks=[csv_logger])
 
@@ -318,7 +321,7 @@ def main():
                  spath=modeldir,
                  model_id=model_id)
     
-    prediction = the_U(x_test, training=False)
+    prediction = the_U.predict(x_test,batch_size=batch_size)
     plot_results(x_test=x_test,
                  y_test=y_test,
                  prediction=prediction,
@@ -330,7 +333,7 @@ def main():
     K.clear_session()
     tf.compat.v1.reset_default_graph() 
     
-    os.system('say "dank"')
+    #os.system('say "dank"')
     print("\n")
     
 if __name__ == "__main__":
