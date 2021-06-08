@@ -37,16 +37,22 @@ import glob as glob
 
 class Profile:
     def __init__(self,std,im_size):
-        self.mid_pixel = int(im_size/2) # 128/2
+        self.mid_pixel = int(im_size[0]/2) # 128/2
         self.x, self.y = self.mid_pixel, self.mid_pixel
         self.im_size = im_size
+        self.size = im_size[0]
         self.std = std
         self.noise = False
         self.lam = 0.1133929878
         
-        gkern1d = signal.gaussian(self.im_size, std=std).reshape(self.im_size, 1)
-        self.im = np.outer(gkern1d, gkern1d)
+        gkern1d = signal.gaussian(self.im_size[0], std=std).reshape(self.im_size[0], 1)
+        self.image = np.outer(gkern1d, gkern1d)
         
+        mask = self.image < 1e-4  # Where values are low
+        self.image[mask] = 0 
+
+        size = im_size[0]
+
         self.im_lrud  = None
         self.im_lr = None
         self.im_ud = None
@@ -55,7 +61,7 @@ class Profile:
         """
         print cluster metadata
         """
-        return str(self.im)
+        return str(self.image)
     
     def to_pandas(self):
         """
@@ -68,8 +74,8 @@ class Profile:
         """
         add Poisson noise to cluster im matrix
         """
-        self.noise = np.random.poisson(lam=self.lam, size=self.im.shape)
-        self.im += self.noise
+        self.noise = np.random.poisson(lam=self.lam, size=self.image.shape)
+        self.image += self.noise
         return
         
     def shift(self):
@@ -80,18 +86,17 @@ class Profile:
         shift cluster randomly within bounds of im
         """
         r = self.std
-        mid = self.mid_pixel #center pixel index of 384x384 image
-        delta = self.im_size - self.mid_pixel - r - 10
+        delta = int(self.size/2) - 50
         
-        x = np.random.randint(low=-1*delta,high=delta,size=1)[0]
-        y = np.random.randint(low=-1*delta,high=delta,size=1)[0]
+        x = np.random.randint(low=-1*delta,high=delta,size=None)
+        y = np.random.randint(low=-1*delta,high=delta,size=None)
 
         self.x += x
         self.y += y
-        im_shift = np.roll(self.im,shift=y,axis=0)
-        self.im = np.roll(im_shift,shift=x,axis=1)
+        im_shift = np.roll(self.image,shift=y,axis=0)
+        self.image = np.roll(im_shift,shift=x,axis=1)
         
-        return 
+        return (self.x,self.y)
     
     def plot(self,spath='../figs/profile/'):
         """
@@ -99,7 +104,7 @@ class Profile:
         """
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        im = ax.imshow(self.im,interpolation='none',cmap='viridis')
+        im = ax.imshow(self.image,interpolation='none',cmap='viridis')
         
         ticks = np.arange(0,self.size,50)
         plt.xticks(ticks),plt.yticks(ticks)
@@ -109,7 +114,7 @@ class Profile:
         cax = divider.append_axes("right", size="5%", pad=0.12)
 
         plt.colorbar(im, cax=cax)
-        # plt.show()
+        plt.show()
         plt.close()
         
         return None
@@ -118,13 +123,13 @@ class Profile:
         im_c = np.zeros((self.im_size,self.im_size))
         im_c[self.x,self.y] = 1
         
-        im_lr = np.fliplr(self.im)
+        im_lr = np.fliplr(self.image)
         im_c_lr = np.flipud(im_c)
         
         self.im_lr = im_lr
         self.x_lr, self.y_lr = [val[0] for val in np.nonzero(im_c_lr)]
         
-        self.im = im_lr
+        self.image = im_lr
         self.x, self.y = self.x_lr, self.y_lr
         return None
 
@@ -132,13 +137,13 @@ class Profile:
         im_c = np.zeros((self.im_size,self.im_size))
         im_c[self.x,self.y] = 1
 
-        im_ud = np.flipud(self.im)
+        im_ud = np.flipud(self.image)
         im_c_ud = np.fliplr(im_c)
         
         self.im_ud = im_ud
         self.x_ud, self.y_ud = [val[0] for val in np.nonzero(im_c_ud)]
         
-        self.im = im_ud
+        self.image = im_ud
         self.x, self.y = self.x_ud, self.y_ud
         return None
     
@@ -146,13 +151,13 @@ class Profile:
         im_c = np.zeros((self.im_size,self.im_size))
         im_c[self.x,self.y] = 1
         
-        im_lrud = np.fliplr(np.flipud(self.im))
+        im_lrud = np.fliplr(np.flipud(self.image))
         im_c_lrud = np.flipud(np.fliplr(im_c))
         
         self.im_lrud = im_lrud
         self.x_lrud, self.y_lrud = [val[0] for val in np.nonzero(im_c_lrud)]
         
-        self.im = im_lrud
+        self.image = im_lrud
         self.x, self.y = self.x_lrud, self.y_lrud
         return None
     
