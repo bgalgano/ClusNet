@@ -33,7 +33,7 @@ from ClusNet import dataset as ds
 from ClusNet import model as m
 
 class Cluster:
-    def __init__(self, fpath=None):
+    def __init__(self, fpath=None,size=None):
         
         self.fpath = fpath
         self.lam = 0.1133929878
@@ -72,11 +72,12 @@ class Cluster:
             else:
                 self.meta_col = meta.columns()
                 
-        self.poisson = np.zeros(shape=(384,384))
-        self.agn = np.zeros(shape=(384,384))
+        self.shape = self.cluster.shape
+        self.poisson = np.zeros(shape=self.shape)
+        self.agn = np.zeros(shape=self.shape)
         self.image = self.poisson + self.agn + self.cluster
         
-        self.w_pix  = len(self.image[:,0])
+        self.w_pix  = len(self.cluster[:,0])
         self.xmid = int(self.w_pix/2)
         self.ymid = int(self.w_pix/2)
         self.mid_pix = (self.xmid,self.ymid)
@@ -108,6 +109,7 @@ class Cluster:
         # image of just poisson noise
         self.poisson = poisson_noise
         self.image += self.poisson
+        return poisson_noise
         
     def add_agn(self,num=3):
         """
@@ -158,6 +160,7 @@ class Cluster:
         self.xmid = self.xmid + x_shift
         self.ymid = self.ymid + y_shift
         self.mid_pix = (self.xmid,self.ymid)
+        self.mask = None
         return
     
     def add_border(self,pad_width=64):
@@ -244,12 +247,44 @@ class Cluster:
 
         agn_all = np.sum(self.agn,axis=-1)
         agns_filter = gaussian_filter(agn_all, sigma=sigma, mode='constant',cval=0.0)
-        agns_mask = (agns_filter > 0.) * 2
+        agns_mask = (agns_filter > 0.) * 1
 
         catnum_map = cluster_mask + agns_mask
-     
-        return catnum_map
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 30, fill = '█', printEnd = "\r"):
+        intersect_map = (catnum_map==2) * 1
+        #catnum_map = np.array([cluster_mask+agns_mask+intersect_map]).T
+        """
+        # 1s and 0s mask (multi channel)
+        mask = np.array([cluster_mask,agns_mask]).T
+        
+        """
+
+        # 0s 1s 2s 3s mask (single channel)
+        #mask = np.array([cluster_mask.T+agns_mask.T*2]).T
+        # 
+        mask = np.array([cluster_mask,agns_mask,intersect_map]).T
+        self.mask = mask
+        return np.rot90(np.fliplr(mask))
+    
+#return np.sum(catnum_map,axis=2)
+def read_cluster(fpath,poisson=True,agn=True,shift=False):
+    x = Cluster(fpath=fpath)
+    agns = 0 
+    poisson = 0
+
+    if shift:
+        x.shift()
+    if agn:
+        num = np.random.randint(low=1,high=4,size=None)
+        agns = x.add_agn(num=num)
+    if poisson:
+        poisson = x.add_poisson()
+
+    image = tf.math.sigmoid(np.log10(x.image))
+    mask = x.get_mask()
+
+    return image, mask
+fill = '█'
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 0, length = 25, fill = '█', printEnd = "\r"):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -270,26 +305,8 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     if iteration == total: 
         print()
         
-def read_cluster(clusfpath,shift=False,agn=True,poisson=True,sigma=2):
-    x = Cluster(fpath=clusfpath)
 
-    if shift:
-        x.shift()
-        
-    if agn:
-        num = np.random.randint(low=1,high=4,size=None)
-        agns = x.add_agn(num=num)
 
-    if poisson:
-        x.add_poisson()
-        
-    image = x.image
-    
-    mask = x.get_mask(sigma=sigma)
-    
-    return image, mask
-
-        
 def load_keras_dataset(clusfpaths,shift=False,add_neg=True,noise=True):
     clusfpaths = get_fpaths(k=k,globdir=GLOBDIR)
             

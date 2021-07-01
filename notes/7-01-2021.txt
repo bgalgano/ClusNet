@@ -1,0 +1,27 @@
+Completed
+- Run a bunch of models on CPU (still relatively fast)
+- hyperparameters tested
+    - kernel initalizers
+    - loss functions (kinda, see troubleshooting)
+    - epochs
+    - Adam learning rate
+    
+Notes
+- accuracy is not a good representation of metrics for segmentation models
+- mean iou much better
+
+
+Troubleshooting
+- best loss function recommending for segmentation not working (still)
+    - binary_crossentropy (bug, can't run)
+    - dice loss (haven't tried yet)
+    - mean iou (not a good performance)
+- he normal kernel initializer not working as well as recommended
+
+Questions
+- is the output of the unet a probability statistic or approximate one-hot encoding?
+
+
+Goals of the summer
+- work on paper draft as new progress is made
+    - start inserting key plots / tables

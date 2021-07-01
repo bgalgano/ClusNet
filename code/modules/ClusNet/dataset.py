@@ -86,7 +86,7 @@ class Profile:
         shift cluster randomly within bounds of im
         """
         r = self.std
-        delta = int(self.size/2) - 50
+        delta = int(self.size/2) - 10
         
         x = np.random.randint(low=-1*delta,high=delta,size=None)
         y = np.random.randint(low=-1*delta,high=delta,size=None)
